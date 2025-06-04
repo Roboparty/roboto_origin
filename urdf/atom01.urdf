@@ -1,7 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
-     Commit Version: 1.6.0-4-g7f85cfe  Build Version: 1.6.7995.38578
-     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
 <robot
   name="atom01urdf">
   <link
@@ -84,7 +81,7 @@
     </collision> -->
   </link>
   <joint
-    name="left_thigh_yaw_joint"
+    name="right_thigh_yaw_joint"
     type="revolute">
     <origin
       xyz="-0.10411 -0.072812 -0.0066865"
@@ -141,7 +138,7 @@
     </collision> -->
   </link>
   <joint
-    name="left_thigh_roll_joint"
+    name="right_thigh_roll_joint"
     type="revolute">
     <origin
       xyz="-0.011479 0 -0.069583"
@@ -199,7 +196,7 @@
     
   </link>
   <joint
-    name="left_thigh_pitch_joint"
+    name="right_thigh_pitch_joint"
     type="revolute">
     <origin
       xyz="0.057156 -0.02485 -0.033003"
@@ -264,7 +261,7 @@
     </collision>
   </link>
   <joint
-    name="left_knee_joint"
+    name="right_knee_joint"
     type="revolute">
     <origin
       xyz="0 3.0016E-05 -0.25"
@@ -322,7 +319,7 @@
     </collision> -->
   </link>
   <joint
-    name="left_ankle_pitch_joint"
+    name="right_ankle_pitch_joint"
     type="revolute">
     <origin
       xyz="0 0.024886 -0.3"
@@ -380,7 +377,7 @@
     </collision>
   </link>
   <joint
-    name="left_ankle_roll_joint"
+    name="right_ankle_roll_joint"
     type="revolute">
     <origin
       xyz="0 0 0"
@@ -438,7 +435,7 @@
     </collision> -->
   </link>
   <joint
-    name="right_thigh_yaw_joint"
+    name="left_thigh_yaw_joint"
     type="revolute">
     <origin
       xyz="-0.10111 0.072188 -0.0014904"
@@ -496,7 +493,7 @@
     </collision> -->
   </link>
   <joint
-    name="right_thigh_roll_joint"
+    name="left_thigh_roll_joint"
     type="revolute">
     <origin
       xyz="-0.014479 0 -0.074779"
@@ -553,7 +550,7 @@
     </collision>
   </link>
   <joint
-    name="right_thigh_pitch_joint"
+    name="left_thigh_pitch_joint"
     type="revolute">
     <origin
       xyz="0.057159 0.02485 -0.032997"
@@ -610,7 +607,7 @@
     </collision>
   </link>
   <joint
-    name="right_knee_joint"
+    name="left_knee_joint"
     type="revolute">
     <origin
       xyz="0 3.0016E-05 -0.25"
@@ -668,7 +665,7 @@
     </collision> -->
   </link>
   <joint
-    name="right_ankle_pitch_joint"
+    name="left_ankle_pitch_joint"
     type="revolute">
     <origin
       xyz="0 -0.024814 -0.3"
@@ -726,7 +723,7 @@
     </collision>
   </link>
   <joint
-    name="right_ankle_roll_joint"
+    name="left_ankle_roll_joint"
     type="revolute">
     <origin
       xyz="0 0 0"
@@ -840,7 +837,7 @@
     </collision>
   </link>
   <joint
-    name="left_arm_pitch_joint"
+    name="right_arm_pitch_joint"
     type="revolute">
     <origin
       xyz="0 -0.12175 0.20518"
@@ -897,7 +894,7 @@
     </collision>
   </link>
   <joint
-    name="left_arm_roll_joint"
+    name="right_arm_roll_joint"
     type="revolute">
     <origin
       xyz="0.02 -0.056 0"
@@ -954,7 +951,7 @@
     </collision>
   </link>
   <joint
-    name="left_arm_yaw_joint"
+    name="right_arm_yaw_joint"
     type="revolute">
     <origin
       xyz="-0.02 0 -0.05"
@@ -1011,7 +1008,7 @@
     </collision>
   </link>
   <joint
-    name="left_elbow_pitch_joint"
+    name="right_elbow_pitch_joint"
     type="revolute">
     <origin
       xyz="0 -0.02 -0.18875"
@@ -1069,7 +1066,7 @@
     </collision> -->
   </link>
   <joint
-    name="left_elbow_yaw_joint"
+    name="right_elbow_yaw_joint"
     type="revolute">
     <origin
       xyz="0.05 0.02 0"
@@ -1126,7 +1123,7 @@
     </collision>
   </link>
   <joint
-    name="right_arm_pitch_joint"
+    name="left_arm_pitch_joint"
     type="revolute">
     <origin
       xyz="0 0.12175 0.20518"
@@ -1183,7 +1180,7 @@
     </collision>
   </link>
   <joint
-    name="right_arm_roll_joint"
+    name="left_arm_roll_joint"
     type="revolute">
     <origin
       xyz="0.02 0.056 0"
@@ -1240,7 +1237,7 @@
     </collision>
   </link>
   <joint
-    name="right_arm_yaw_joint"
+    name="left_arm_yaw_joint"
     type="revolute">
     <origin
       xyz="-0.02 0 -0.05"
@@ -1297,7 +1294,7 @@
     </collision>
   </link>
   <joint
-    name="right_elbow_pitch_joint"
+    name="left_elbow_pitch_joint"
     type="revolute">
     <origin
       xyz="0 0.02 -0.18875"
@@ -1355,7 +1352,7 @@
     </collision> -->
   </link>
   <joint
-    name="right_elbow_yaw_joint"
+    name="left_elbow_yaw_joint"
     type="revolute">
     <origin
       xyz="0.05 -0.02 0"
