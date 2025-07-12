@@ -961,7 +961,7 @@
     <child
       link="left_arm_yaw_link" />
     <axis
-      xyz="0 0 1" />
+      xyz="0 0 -1" />
     <limit
       lower="-2.6"
       upper="2.6"
@@ -1076,7 +1076,7 @@
     <child
       link="left_elbow_yaw_link" />
     <axis
-      xyz="-1 0 0" />
+      xyz="1 0 0" />
     <limit
       lower="-1.57"
       upper="1.57"
@@ -1247,7 +1247,7 @@
     <child
       link="right_arm_yaw_link" />
     <axis
-      xyz="0 0 1" />
+      xyz="0 0 -1" />
     <limit
       lower="-2.6"
       upper="2.6"
@@ -1362,7 +1362,7 @@
     <child
       link="right_elbow_yaw_link" />
     <axis
-      xyz="-1 0 0" />
+      xyz="1 0 0" />
     <limit
       lower="-1.57"
       upper="1.57"
