@@ -1,7 +1,7 @@
 <mujoco model="atom01">
   <compiler angle="radian" meshdir="../meshes/" eulerseq="zyx"/>
     <option timestep='0.001' iterations='100' solver='PGS' gravity='0 0 -9.81'>
-    <flag sensornoise="enable" frictionloss="enable"/>
+    <flag frictionloss="enable"/>
     </option>
     <size njmax="500" nconmax="100" />
 
