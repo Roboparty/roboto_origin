@@ -208,11 +208,23 @@ class BaseEnv(VecEnv):
         self.extras["log"].update(reward_extras)
         self.extras["time_outs"] = self.time_out_buf
 
+        if self.cfg.domain_rand.action_delay.enable:
+            time_lags = torch.randint(
+                low=self.cfg.domain_rand.action_delay.params["min_delay"],
+                high=self.cfg.domain_rand.action_delay.params["max_delay"] + 1,
+                size=(self.num_envs,),
+                dtype=torch.int,
+                device=self.device,
+            )
+            self.action_buffer.set_time_lag(time_lags, env_ids)
+
         self.command_generator.reset(env_ids)
         self.actor_obs_buffer.reset(env_ids)
         self.critic_obs_buffer.reset(env_ids)
         self.action_buffer.reset(env_ids)
         self.episode_length_buf[env_ids] = 0
+        self.last_feet_z[env_ids] = 0
+        self.feet_height[env_ids] = 0
 
         self.scene.write_data_to_sim()
         self.sim.forward()
