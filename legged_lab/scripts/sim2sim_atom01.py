@@ -123,7 +123,7 @@ def run_mujoco(policy, cfg, headless=False):
     actual_lin_vel_data = [] # Store [vx, vy] at low freq
     actual_ang_vel_data = [] # Store [wz] at low freq
     # -------------------------------------------------------------
-    
+    is_first_frame = True
     for step in tqdm(range(int(cfg.sim_config.sim_duration / cfg.sim_config.dt)), desc="Simulating..."):
 
         # Obtain an observation
@@ -151,7 +151,11 @@ def run_mujoco(policy, cfg, headless=False):
             obs[0, 32:55] = dq_obs
             obs[0, 55:78] = action
 
-            hist_obs = np.concatenate((hist_obs[1:], obs.reshape(1, -1)), axis=0)
+            if is_first_frame:
+                hist_obs = np.tile(obs, (cfg.robot_config.frame_stack, 1))
+                is_first_frame = False
+            else:
+                hist_obs = np.concatenate((hist_obs[1:], obs.reshape(1, -1)), axis=0)
 
             policy_input = hist_obs.reshape(1, -1).astype(np.float32)
             with torch.inference_mode():
@@ -310,13 +314,13 @@ if __name__ == '__main__':
             else:
                 mujoco_model_path = f'{LEGGED_LAB_ROOT_DIR}/legged_lab/assets/roboparty/atom/mjcf/atom01.xml'
             sim_duration = 10.0
-            dt = 0.004
-            decimation = 5
+            dt = 0.001
+            decimation = 20
 
         class robot_config:
-            kps = np.array([150, 150, 200, 200, 50, 50, 150, 150, 200, 200, 50, 50, 200, 75, 75, 75, 50, 25, 75, 75, 75, 50, 25], dtype=np.double)
-            kds = np.array([5.0, 5.0, 5.0, 5.0, 2.5, 2.5, 5.0, 5.0, 5.0, 5.0, 2.5, 2.5, 5.0, 3.0, 3.0, 3.0, 2.5, 2.0, 3.0, 3.0, 3.0, 2.5, 2.0], dtype=np.double)
-            default_pos = np.array([0, 0, -0.24, 0.48, -0.24, 0, 0, 0, -0.24, 0.48, -0.24, 0, 0, 0.1, 0.07, 0, 1.2, 0, 0.1, -0.07, 0, 1.2, 0], dtype=np.double)
+            kps = np.array([100, 100, 150, 150, 50, 50, 100, 100, 150, 150, 40, 40, 150, 60, 60, 60, 40, 20, 60, 60, 60, 40, 20], dtype=np.double)
+            kds = np.array([3.0, 3.0, 5.0, 5.0, 1.5, 1.5, 3.0, 3.0, 5.0, 5.0, 1.5, 1.5, 5.0, 2.0, 2.0, 2.0, 1.5, 1.0, 2.0, 2.0, 2.0, 1.5, 1.0], dtype=np.double)
+            default_pos = np.array([0, 0, -0.2, 0.4, -0.2, 0, 0, 0, -0.2, 0.4, -0.2, 0, 0, 0.1, 0.07, 0, 1., 0, 0.1, -0.07, 0, 1., 0], dtype=np.double)
             tau_limit = 200. * np.ones(23, dtype=np.double)
             frame_stack = 10
             num_single_obs = 78
