@@ -43,23 +43,23 @@ class ATOM01RewardCfg(RewardCfg):
     track_lin_vel_xy_exp = RewTerm(func=mdp.track_lin_vel_xy_yaw_frame_exp, weight=2.0, params={"std": 0.2})
     track_ang_vel_z_exp = RewTerm(func=mdp.track_ang_vel_z_world_exp, weight=2.0, params={"std": 0.2})
     lin_vel_z_l2 = RewTerm(func=mdp.lin_vel_z_l2, weight=-0.4)
-    ang_vel_xy_l2 = RewTerm(func=mdp.ang_vel_xy_l2, weight=-0.2)
+    ang_vel_xy_l2 = RewTerm(func=mdp.ang_vel_xy_l2, weight=-0.4)
     energy = RewTerm(func=mdp.energy, weight=-2.5e-5)
     joint_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1e-5)
     joint_vel_l2 = RewTerm(func=mdp.joint_vel_l2, weight=-2e-4)
     dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-7)
-    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-1e-2)
-    action_smoothness_l2 = RewTerm(func=mdp.action_smoothness_l2, weight=-1e-2)
+    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-2e-2)
+    action_smoothness_l2 = RewTerm(func=mdp.action_smoothness_l2, weight=-2e-2)
     undesired_contacts = RewTerm(
         func=mdp.undesired_contacts,
         weight=-1.0,
-        params={"sensor_cfg": SceneEntityCfg("contact_sensor", body_names="(?!.*ankle_roll.*).*"), "threshold": 1.0},
+        params={"sensor_cfg": SceneEntityCfg("contact_sensor", body_names="(?!.*ankle_roll.*).*")},
     )
     flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=-1.0)
     termination_penalty = RewTerm(func=mdp.is_terminated, weight=-200.0)
     feet_air_time = RewTerm(
         func=mdp.feet_air_time_positive_biped,
-        weight=1.0,
+        weight=1.2,
         params={"sensor_cfg": SceneEntityCfg("contact_sensor", body_names=".*ankle_roll.*"), "threshold": 0.5},
     )
     feet_slide = RewTerm(
@@ -72,7 +72,7 @@ class ATOM01RewardCfg(RewardCfg):
     )
     feet_force = RewTerm(
         func=mdp.body_force,
-        weight=-3e-3,
+        weight=-5e-3,
         params={
             "sensor_cfg": SceneEntityCfg("contact_sensor", body_names=".*ankle_roll.*"),
             "threshold": 500,
@@ -82,12 +82,12 @@ class ATOM01RewardCfg(RewardCfg):
     feet_distance = RewTerm(
         func=mdp.body_distance_y,
         weight=0.4,
-        params={"asset_cfg": SceneEntityCfg("robot", body_names=[".*ankle_roll.*"]), "min": 0.2, "max": 0.7},
+        params={"asset_cfg": SceneEntityCfg("robot", body_names=[".*ankle_roll.*"]), "min": 0.18, "max": 0.7},
     )
     knee_distance = RewTerm(
         func=mdp.body_distance_y,
         weight=0.4,
-        params={"asset_cfg": SceneEntityCfg("robot", body_names=[".*_knee.*"]), "min": 0.2, "max": 0.35},
+        params={"asset_cfg": SceneEntityCfg("robot", body_names=[".*_knee.*"]), "min": 0.18, "max": 0.35},
     )
     feet_stumble = RewTerm(
         func=mdp.feet_stumble,
@@ -97,7 +97,7 @@ class ATOM01RewardCfg(RewardCfg):
     dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=-1.0)
     joint_deviation_hip = RewTerm(
         func=mdp.joint_deviation_l1,
-        weight=-0.1,
+        weight=-0.15,
         params={
             "asset_cfg": SceneEntityCfg(
                 "robot", joint_names=[".*_thigh_yaw.*", ".*_thigh_roll.*", ".*_ankle_roll.*"]
@@ -109,17 +109,17 @@ class ATOM01RewardCfg(RewardCfg):
         weight=-2.5,
         params={
             "asset_cfg": SceneEntityCfg(
-                "robot", joint_names=[".*_arm_roll.*", ".*_arm_yaw.*", ".*_elbow_yaw.*", ".*torso.*"]
+                "robot", joint_names=[".*_arm_roll.*", ".*_arm_yaw.*", ".*_elbow_pitch.*", ".*_elbow_yaw.*", ".*torso.*"]
             )
         },
     )
     joint_deviation_arms = RewTerm(
         func=mdp.joint_deviation_l1,
-        weight=-0.15,
+        weight=-0.075,
         params={
             "asset_cfg": SceneEntityCfg(
                 "robot",
-                joint_names=[".*_arm_pitch.*", ".*_elbow_pitch.*"],
+                joint_names=[".*_arm_pitch.*"],
             )
         },
     )
@@ -130,7 +130,7 @@ class ATOM01RewardCfg(RewardCfg):
     )
     feet_contact_without_cmd = RewTerm(
         func=mdp.feet_contact_without_cmd,
-        weight=0.4,
+        weight=0.1,
         params={"sensor_cfg": SceneEntityCfg("contact_sensor", body_names=[".*ankle_roll.*"])},
     )
     no_feet_contact = RewTerm(
@@ -140,12 +140,12 @@ class ATOM01RewardCfg(RewardCfg):
     )
     upward = RewTerm(func=mdp.upward, weight=0.2)
     joint_pos_penalty = RewTerm(func=mdp.joint_pos_penalty, weight=-2.5, params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*")})
-    feet_height = RewTerm(
-        func=mdp.feet_height,
-        weight=0.2,
-        params={"sensor_cfg": SceneEntityCfg("contact_sensor", body_names=".*ankle_roll.*"),
-                "asset_cfg": SceneEntityCfg("robot", body_names=".*_ankle_roll.*"),
-                "threshold":0.04})
+    # feet_height = RewTerm(
+    #     func=mdp.feet_height,
+    #     weight=0.2,
+    #     params={"sensor_cfg": SceneEntityCfg("contact_sensor", body_names=".*ankle_roll.*"),
+    #             "asset_cfg": SceneEntityCfg("robot", body_names=".*_ankle_roll.*"),
+    #             "ankle_height":0.035,"threshold":0.04})
 
 policy_obs_mirror_indices = [0, 1, 2,\
                              3, 4, 5,\
@@ -294,7 +294,6 @@ class ATOM01RoughEnvCfg(ATOM01FlatEnvCfg):
         self.scene.terrain_generator = ROUGH_TERRAINS_CFG
         self.robot.actor_obs_history_length = 1
         self.robot.critic_obs_history_length = 1
-        self.reward.feet_air_time.weight = 0.25
         self.reward.track_lin_vel_xy_exp.weight = 1.5
         self.reward.track_ang_vel_z_exp.weight = 1.5
         self.reward.lin_vel_z_l2.weight = -0.25

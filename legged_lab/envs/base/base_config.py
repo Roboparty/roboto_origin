@@ -223,6 +223,6 @@ class PhysxCfg:
 
 @configclass
 class SimCfg:
-    dt: float = 0.004
-    decimation: int = 5
+    dt: float = 0.005
+    decimation: int = 4
     physx: PhysxCfg = PhysxCfg()
