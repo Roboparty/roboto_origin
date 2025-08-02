@@ -83,10 +83,10 @@ def action_smoothness_l2(env: BaseEnv) -> torch.Tensor:
     )
 
 
-def undesired_contacts(env: BaseEnv, threshold: float, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
+def undesired_contacts(env: BaseEnv, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
     net_contact_forces = contact_sensor.data.net_forces_w_history
-    is_contact = torch.max(torch.norm(net_contact_forces[:, :, sensor_cfg.body_ids], dim=-1), dim=1)[0] > threshold
+    is_contact = torch.max(torch.norm(net_contact_forces[:, :, sensor_cfg.body_ids], dim=-1), dim=1)[0] > 5.0
     return torch.sum(is_contact, dim=1)
 
 
@@ -171,7 +171,7 @@ def feet_contact_without_cmd(env: BaseEnv, sensor_cfg: SceneEntityCfg) -> torch.
     # extract the used quantities (to enable type-hinting)
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
     # compute the reward
-    contacts = contact_sensor.compute_first_contact(env.step_dt)[:, sensor_cfg.body_ids]
+    contacts = contact_sensor.data.net_forces_w_history[:, :, sensor_cfg.body_ids, :].norm(dim=-1).max(dim=1)[0] > 5.0
     reward = torch.sum(contacts, dim=-1).float()
     reward *= torch.linalg.norm(env.command_generator.command[:, :3], dim=1) < 0.01
     reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
@@ -224,7 +224,7 @@ def joint_pos_penalty(
     return reward
 
 
-def feet_height(env: BaseEnv, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"), threshold: float = 0.05):
+def feet_height(env: BaseEnv, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"), ankle_height: float = 0.035, threshold: float = 0.05):
     """
     Calculates reward based on the clearance of the swing leg from the ground during movement.
     Encourages appropriate lift of the feet during the swing phase of the gait.
@@ -234,7 +234,7 @@ def feet_height(env: BaseEnv, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntity
     # compute the reward
     contacts = contact_sensor.data.net_forces_w_history[:, :, sensor_cfg.body_ids, :].norm(dim=-1).max(dim=1)[0] > 5.0
     asset: Articulation = env.scene[asset_cfg.name]
-    feet_z = asset.data.body_pos_w[:, asset_cfg.body_ids, 2] - 0.038  # 0.038 is the height of the ankle
+    feet_z = asset.data.body_pos_w[:, asset_cfg.body_ids, 2] - ankle_height
     delta_z = feet_z - env.last_feet_z
     env.feet_height += delta_z
     env.last_feet_z = feet_z
