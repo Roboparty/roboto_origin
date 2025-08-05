@@ -42,9 +42,9 @@ from legged_lab.terrains import GRAVEL_TERRAINS_CFG, ROUGH_TERRAINS_CFG
 class ATOM01RewardCfg(RewardCfg):
     track_lin_vel_xy_exp = RewTerm(func=mdp.track_lin_vel_xy_yaw_frame_exp, weight=2.0, params={"std": 0.2})
     track_ang_vel_z_exp = RewTerm(func=mdp.track_ang_vel_z_world_exp, weight=2.0, params={"std": 0.2})
-    lin_vel_z_l2 = RewTerm(func=mdp.lin_vel_z_l2, weight=-0.4)
-    ang_vel_xy_l2 = RewTerm(func=mdp.ang_vel_xy_l2, weight=-0.4)
-    energy = RewTerm(func=mdp.energy, weight=-2.5e-5)
+    lin_vel_z_l2 = RewTerm(func=mdp.lin_vel_z_l2, weight=-0.5)
+    ang_vel_xy_l2 = RewTerm(func=mdp.ang_vel_xy_l2, weight=-0.1)
+    energy = RewTerm(func=mdp.energy, weight=-1e-4)
     joint_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1e-5)
     joint_vel_l2 = RewTerm(func=mdp.joint_vel_l2, weight=-2e-4)
     dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-7)
@@ -82,12 +82,12 @@ class ATOM01RewardCfg(RewardCfg):
     feet_distance = RewTerm(
         func=mdp.body_distance_y,
         weight=0.4,
-        params={"asset_cfg": SceneEntityCfg("robot", body_names=[".*ankle_roll.*"]), "min": 0.18, "max": 0.7},
+        params={"asset_cfg": SceneEntityCfg("robot", body_names=[".*ankle_roll.*"]), "min": 0.185, "max": 0.7},
     )
     knee_distance = RewTerm(
         func=mdp.body_distance_y,
         weight=0.4,
-        params={"asset_cfg": SceneEntityCfg("robot", body_names=[".*_knee.*"]), "min": 0.18, "max": 0.35},
+        params={"asset_cfg": SceneEntityCfg("robot", body_names=[".*_knee.*"]), "min": 0.185, "max": 0.35},
     )
     feet_stumble = RewTerm(
         func=mdp.feet_stumble,
@@ -97,7 +97,7 @@ class ATOM01RewardCfg(RewardCfg):
     dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=-1.0)
     joint_deviation_hip = RewTerm(
         func=mdp.joint_deviation_l1,
-        weight=-0.15,
+        weight=-0.12,
         params={
             "asset_cfg": SceneEntityCfg(
                 "robot", joint_names=[".*_thigh_yaw.*", ".*_thigh_roll.*", ".*_ankle_roll.*"]
@@ -106,7 +106,7 @@ class ATOM01RewardCfg(RewardCfg):
     )
     joint_deviation_torso = RewTerm(
         func=mdp.joint_deviation_l1,
-        weight=-2.5,
+        weight=-2.0,
         params={
             "asset_cfg": SceneEntityCfg(
                 "robot", joint_names=[".*_arm_roll.*", ".*_arm_yaw.*", ".*_elbow_pitch.*", ".*_elbow_yaw.*", ".*torso.*"]
@@ -115,7 +115,7 @@ class ATOM01RewardCfg(RewardCfg):
     )
     joint_deviation_arms = RewTerm(
         func=mdp.joint_deviation_l1,
-        weight=-0.075,
+        weight=-0.08,
         params={
             "asset_cfg": SceneEntityCfg(
                 "robot",
@@ -140,12 +140,14 @@ class ATOM01RewardCfg(RewardCfg):
     )
     upward = RewTerm(func=mdp.upward, weight=0.2)
     joint_pos_penalty = RewTerm(func=mdp.joint_pos_penalty, weight=-2.5, params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*")})
-    # feet_height = RewTerm(
-    #     func=mdp.feet_height,
-    #     weight=0.2,
-    #     params={"sensor_cfg": SceneEntityCfg("contact_sensor", body_names=".*ankle_roll.*"),
-    #             "asset_cfg": SceneEntityCfg("robot", body_names=".*_ankle_roll.*"),
-    #             "ankle_height":0.035,"threshold":0.04})
+    feet_height = RewTerm(
+        func=mdp.feet_height,
+        weight=0.1,
+        params={"sensor_cfg": SceneEntityCfg("contact_sensor", body_names=".*ankle_roll.*"),
+                "asset_cfg": SceneEntityCfg("robot", body_names=".*_ankle_roll.*"),
+                "sensor_cfg1": SceneEntityCfg("left_feet_scanner"),
+                "sensor_cfg2": SceneEntityCfg("right_feet_scanner"),
+                "ankle_height":0.035,"threshold":0.03})
 
 policy_obs_mirror_indices = [0, 1, 2,\
                              3, 4, 5,\
@@ -166,7 +168,13 @@ critic_obs_mirror_indices = [0, 1, 2,\
                              33, 32, 34, 36, 35, 38, 37, 40, 39, 42, 41, 44, 43, 46, 45, 48, 47, 50, 49, 52, 51, 54, 53,\
                              56, 55, 57, 59, 58, 61, 60, 63, 62, 65, 64, 67, 66, 69, 68, 71, 70, 73, 72, 75, 74, 77, 76,\
                              78, 79, 80,\
-                             82, 81]
+                             82, 81,\
+                             86, 87, 88, 83, 84, 85,\
+                             90, 89,\
+                             92, 91,\
+                             94, 93, 95, 97, 96, 99, 98, 101, 100, 103, 102, 105, 104, 107, 106, 109, 108, 111, 110, 113, 112, 115, 114,\
+                             117, 116, 118, 120, 119, 122, 121, 124, 123, 126, 125, 128, 127, 130, 129, 132, 131, 134, 133, 136, 135, 138, 137,\
+                             139]
 critic_obs_mirror_signs = [-1, 1, -1,\
                            1, -1, 1,\
                            1, -1, -1,\
@@ -174,7 +182,13 @@ critic_obs_mirror_signs = [-1, 1, -1,\
                            -1, -1, -1, -1, -1, 1, 1, 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, 1, 1, -1, -1, -1, -1,\
                            -1, -1, -1, -1, -1, 1, 1, 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, 1, 1, -1, -1, -1, -1,\
                             1, -1, 1,\
-                            1, 1]
+                            1, 1,\
+                            1, -1, 1, 1, -1, 1,\
+                            1, 1,\
+                            1, 1,\
+                            -1, -1, -1, -1, -1, 1, 1, 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, 1, 1, -1, -1, -1, -1,\
+                            -1, -1, -1, -1, -1, 1, 1, 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, 1, 1, -1, -1, -1, -1,\
+                            1]
 act_mirror_indices = [1, 0, 2, 4, 3, 6, 5, 8, 7, 10, 9, 12, 11, 14, 13, 16, 15, 18, 17, 20, 19, 22, 21]
 act_mirror_signs = [-1, -1, -1, -1, -1, 1, 1, 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, 1, 1, -1, -1, -1, -1]
 policy_obs_mirror_indices_expanded = []
@@ -186,7 +200,7 @@ policy_obs_mirror_signs_expanded = policy_obs_mirror_signs * 10
 
 critic_obs_mirror_indices_expanded = []
 for i in range(10):
-    offset = i * 82
+    offset = i * 140
     for idx in critic_obs_mirror_indices:
         critic_obs_mirror_indices_expanded.append(idx + offset)
 critic_obs_mirror_signs_expanded = critic_obs_mirror_signs * 10
@@ -256,7 +270,7 @@ class ATOM01FlatAgentCfg(BaseAgentCfg):
     wandb_project: str = "atom01_flat"
     seed = 42
     num_steps_per_env = 24
-    max_iterations = 15001
+    max_iterations = 9001
     save_interval = 1000
     empirical_normalization = True
     algorithm = RslRlPpoAlgorithmCfg(
@@ -267,7 +281,7 @@ class ATOM01FlatAgentCfg(BaseAgentCfg):
         entropy_coef=0.005,
         num_learning_epochs=5,
         num_mini_batches=4,
-        learning_rate=1.0e-4,
+        learning_rate=1.0e-3,
         schedule="adaptive",
         gamma=0.99,
         lam=0.95,
@@ -277,7 +291,7 @@ class ATOM01FlatAgentCfg(BaseAgentCfg):
         symmetry_cfg=RslRlSymmetryCfg(
             use_data_augmentation=True, 
             use_mirror_loss=True,
-            mirror_loss_coeff=1.0, 
+            mirror_loss_coeff=0.2, 
             data_augmentation_func=data_augmentation_func
         ),
         rnd_cfg=None,  # RslRlRndCfg()
