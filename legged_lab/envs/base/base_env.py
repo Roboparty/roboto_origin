@@ -125,8 +125,6 @@ class BaseEnv(VecEnv):
         self.episode_length_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.long)
         self.sim_step_counter = 0
         self.time_out_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.bool)
-        self.last_feet_z = torch.zeros(self.num_envs, 2, device=self.device, dtype=torch.float)
-        self.feet_height = torch.zeros(self.num_envs, 2, device=self.device, dtype=torch.float)
         self.init_obs_buffer()
 
     def compute_current_observations(self):
@@ -153,8 +151,24 @@ class BaseEnv(VecEnv):
 
         root_lin_vel = robot.data.root_lin_vel_b
         feet_contact = torch.max(torch.norm(net_contact_forces[:, :, self.feet_cfg.body_ids], dim=-1), dim=1)[0] > 5.0
+        feet_contact_force = self.contact_sensor.data.net_forces_w[:, self.feet_cfg.body_ids, :]
+        feet_air_time = self.contact_sensor.data.current_air_time[:, self.feet_cfg.body_ids]
+        feet_height = torch.stack(
+        [
+            self.scene[sensor_cfg.name].data.pos_w[:, 2]
+            - self.scene[sensor_cfg.name].data.ray_hits_w[..., 2].mean(dim=-1)
+            for sensor_cfg in [SceneEntityCfg("left_feet_scanner"), SceneEntityCfg("right_feet_scanner")]
+            if sensor_cfg is not None
+        ],
+        dim=-1,
+        )
+        feet_height = torch.nan_to_num(feet_height, nan=0, posinf=0, neginf=0)
+        feet_height = torch.clamp(feet_height - 0.035, min=0.0)
+        joint_torque = robot.data.applied_torque
+        joint_acc = robot.data.joint_acc
+        action_delay = self.action_buffer.time_lags.to(self.device).unsqueeze(1)
         current_critic_obs = torch.cat(
-            [current_actor_obs, root_lin_vel * self.obs_scales.lin_vel, feet_contact], dim=-1
+            [current_actor_obs, root_lin_vel * self.obs_scales.lin_vel, feet_contact.float(), feet_contact_force.flatten(1), feet_air_time.flatten(1), feet_height.flatten(1), joint_acc, joint_torque, action_delay.float()], dim=-1
         )
 
         return current_actor_obs, current_critic_obs
@@ -223,8 +237,6 @@ class BaseEnv(VecEnv):
         self.critic_obs_buffer.reset(env_ids)
         self.action_buffer.reset(env_ids)
         self.episode_length_buf[env_ids] = 0
-        self.last_feet_z[env_ids] = 0
-        self.feet_height[env_ids] = 0
 
         self.scene.write_data_to_sim()
         self.sim.forward()
