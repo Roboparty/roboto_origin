@@ -159,8 +159,11 @@ def body_distance_y(
 ) -> torch.Tensor:
     assert len(asset_cfg.body_ids) == 2
     asset: Articulation = env.scene[asset_cfg.name]
-    feet_pos = asset.data.body_pos_w[:, asset_cfg.body_ids, 1]
-    distance = torch.abs(feet_pos[:, 0] - feet_pos[:, 1])
+    root_quat_w = asset.data.root_quat_w.unsqueeze(1).expand(-1, 2, -1)
+    root_pos_w = asset.data.root_pos_w.unsqueeze(1).expand(-1, 2, -1)
+    feet_pos_w = asset.data.body_pos_w[:, asset_cfg.body_ids]
+    feet_pos_b = math_utils.quat_apply_inverse(root_quat_w, feet_pos_w - root_pos_w)
+    distance = torch.abs(feet_pos_b[:, 0, 1] - feet_pos_b[:, 1, 1])
     d_min = torch.clamp(distance - min, -0.5, 0.)
     d_max = torch.clamp(distance - max, 0, 0.5)
     return (torch.exp(-torch.abs(d_min) * 100) + torch.exp(-torch.abs(d_max) * 100)) / 2
@@ -224,7 +227,8 @@ def joint_pos_penalty(
     return reward
 
 
-def feet_height(env: BaseEnv, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"), ankle_height: float = 0.035, threshold: float = 0.05):
+def feet_height(env: BaseEnv, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"), sensor_cfg1: SceneEntityCfg | None = None,
+    sensor_cfg2: SceneEntityCfg | None = None, ankle_height: float = 0.035, threshold: float = 0.05):
     """
     Calculates reward based on the clearance of the swing leg from the ground during movement.
     Encourages appropriate lift of the feet during the swing phase of the gait.
@@ -234,15 +238,21 @@ def feet_height(env: BaseEnv, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntity
     # compute the reward
     contacts = contact_sensor.data.net_forces_w_history[:, :, sensor_cfg.body_ids, :].norm(dim=-1).max(dim=1)[0] > 5.0
     asset: Articulation = env.scene[asset_cfg.name]
-    feet_z = asset.data.body_pos_w[:, asset_cfg.body_ids, 2] - ankle_height
-    delta_z = feet_z - env.last_feet_z
-    env.feet_height += delta_z
-    env.last_feet_z = feet_z
+    feet_height = torch.stack(
+        [
+            env.scene[sensor_cfg.name].data.pos_w[:, 2]
+            - env.scene[sensor_cfg.name].data.ray_hits_w[..., 2].mean(dim=-1)
+            for sensor_cfg in [sensor_cfg1, sensor_cfg2]
+            if sensor_cfg is not None
+        ],
+        dim=-1,
+    )
+    feet_height = torch.nan_to_num(feet_height, nan=0, posinf=0, neginf=0)
+    feet_height = torch.clamp(feet_height - ankle_height, min=0.0)
     # Compute single_stance mask
     single_stance = contacts.sum(dim=1) == 1
     # feet height should be closed to target feet height at the peak
-    rew_pos = env.feet_height > threshold
+    rew_pos = feet_height > threshold
     reward = torch.where(single_stance.unsqueeze(-1), rew_pos.float(), 0.0).sum(dim=1)
     reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
-    env.feet_height *= ~contacts
     return reward
