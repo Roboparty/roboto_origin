@@ -29,6 +29,7 @@ class RewardCfg:
 @configclass
 class HeightScannerCfg:
     enable_height_scan: bool = False
+    enable_height_scan_actor: bool = False
     prim_body_name: str = MISSING
     resolution: float = 0.1
     size: tuple = (1.6, 1.0)
