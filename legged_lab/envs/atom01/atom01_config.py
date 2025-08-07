@@ -42,7 +42,7 @@ from legged_lab.terrains import GRAVEL_TERRAINS_CFG, ROUGH_TERRAINS_CFG
 class ATOM01RewardCfg(RewardCfg):
     track_lin_vel_xy_exp = RewTerm(func=mdp.track_lin_vel_xy_yaw_frame_exp, weight=2.0, params={"std": 0.2})
     track_ang_vel_z_exp = RewTerm(func=mdp.track_ang_vel_z_world_exp, weight=2.0, params={"std": 0.2})
-    lin_vel_z_l2 = RewTerm(func=mdp.lin_vel_z_l2, weight=-0.5)
+    lin_vel_z_l2 = RewTerm(func=mdp.lin_vel_z_l2, weight=-0.4)
     ang_vel_xy_l2 = RewTerm(func=mdp.ang_vel_xy_l2, weight=-0.1)
     energy = RewTerm(func=mdp.energy, weight=-1e-4)
     joint_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1e-5)
@@ -97,7 +97,7 @@ class ATOM01RewardCfg(RewardCfg):
     dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=-1.0)
     joint_deviation_hip = RewTerm(
         func=mdp.joint_deviation_l1,
-        weight=-0.12,
+        weight=-0.1,
         params={
             "asset_cfg": SceneEntityCfg(
                 "robot", joint_names=[".*_thigh_yaw.*", ".*_thigh_roll.*", ".*_ankle_roll.*"]
@@ -130,16 +130,16 @@ class ATOM01RewardCfg(RewardCfg):
     )
     feet_contact_without_cmd = RewTerm(
         func=mdp.feet_contact_without_cmd,
-        weight=0.1,
+        weight=0.2,
         params={"sensor_cfg": SceneEntityCfg("contact_sensor", body_names=[".*ankle_roll.*"])},
     )
     no_feet_contact = RewTerm(
         func=mdp.no_feet_contact,
-        weight=-0.1,
+        weight=-0.2,
         params={"sensor_cfg": SceneEntityCfg("contact_sensor", body_names=[".*ankle_roll.*"])},
     )
     upward = RewTerm(func=mdp.upward, weight=0.2)
-    joint_pos_penalty = RewTerm(func=mdp.joint_pos_penalty, weight=-2.5, params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*")})
+    stand_still = RewTerm(func=mdp.stand_still, weight=-0.5, params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*"), "pos_weight": 1.0, "vel_weight": 0.1})
     feet_height = RewTerm(
         func=mdp.feet_height,
         weight=0.1,
@@ -149,46 +149,56 @@ class ATOM01RewardCfg(RewardCfg):
                 "sensor_cfg2": SceneEntityCfg("right_feet_scanner"),
                 "ankle_height":0.035,"threshold":0.03})
 
+def generate_height_scan_mirror(start_idx=140, rows=17, cols=11):
+    mirror_indices = []
+    for row in range(rows):
+        for col in range(cols):
+            mirror_col = cols - 1 - col
+            mirror_idx = start_idx + row * cols + mirror_col
+            mirror_indices.append(mirror_idx)
+    mirror_signs = [1] * (rows * cols)
+    return mirror_indices, mirror_signs
+
+def generate_joint_mirror(start_idx):
+    mirror_indices = []
+    mirror_indices.extend([start_idx + 1, start_idx])    
+    mirror_indices.append(start_idx + 2)
+    for i in range(start_idx + 3, start_idx + 23, 2):
+        mirror_indices.extend([i + 1, i])
+    mirror_signs = [-1, -1, -1, -1, -1, 1, 1, 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, 1, 1, -1, -1, -1, -1]
+    return mirror_indices, mirror_signs
+
+joint_pos_mirror_indices, joint_pos_mirror_signs = generate_joint_mirror(9)
+joint_vel_mirror_indices, joint_vel_mirror_signs = generate_joint_mirror(32)
+action_mirror_indices, action_mirror_signs = generate_joint_mirror(55)
 policy_obs_mirror_indices = [0, 1, 2,\
                              3, 4, 5,\
-                             6, 7, 8,\
-                             10, 9, 11, 13, 12, 15, 14, 17, 16, 19, 18, 21, 20, 23, 22, 25, 24, 27, 26, 29, 28, 31, 30,\
-                             33, 32, 34, 36, 35, 38, 37, 40, 39, 42, 41, 44, 43, 46, 45, 48, 47, 50, 49, 52, 51, 54, 53,\
-                             56, 55, 57, 59, 58, 61, 60, 63, 62, 65, 64, 67, 66, 69, 68, 71, 70, 73, 72, 75, 74, 77, 76]
+                             6, 7, 8]\
+                            + joint_pos_mirror_indices + joint_vel_mirror_indices + action_mirror_indices
 policy_obs_mirror_signs = [-1, 1, -1,\
                            1, -1, 1,\
-                           1, -1, -1,\
-                           -1, -1, -1, -1, -1, 1, 1, 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, 1, 1, -1, -1, -1, -1,\
-                           -1, -1, -1, -1, -1, 1, 1, 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, 1, 1, -1, -1, -1, -1,\
-                           -1, -1, -1, -1, -1, 1, 1, 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, 1, 1, -1, -1, -1, -1]
-critic_obs_mirror_indices = [0, 1, 2,\
-                             3, 4, 5,\
-                             6, 7, 8,\
-                             10, 9, 11, 13, 12, 15, 14, 17, 16, 19, 18, 21, 20, 23, 22, 25, 24, 27, 26, 29, 28, 31, 30,\
-                             33, 32, 34, 36, 35, 38, 37, 40, 39, 42, 41, 44, 43, 46, 45, 48, 47, 50, 49, 52, 51, 54, 53,\
-                             56, 55, 57, 59, 58, 61, 60, 63, 62, 65, 64, 67, 66, 69, 68, 71, 70, 73, 72, 75, 74, 77, 76,\
-                             78, 79, 80,\
+                           1, -1, -1] + joint_pos_mirror_signs + joint_vel_mirror_signs + action_mirror_signs
+joint_acc_mirror_indices, joint_acc_mirror_signs = generate_joint_mirror(93)
+joint_torques_mirror_indices, joint_torques_mirror_signs = generate_joint_mirror(116)
+critic_obs_mirror_indices = policy_obs_mirror_indices +\
+                            [78, 79, 80,\
                              82, 81,\
                              86, 87, 88, 83, 84, 85,\
                              90, 89,\
-                             92, 91,\
-                             94, 93, 95, 97, 96, 99, 98, 101, 100, 103, 102, 105, 104, 107, 106, 109, 108, 111, 110, 113, 112, 115, 114,\
-                             117, 116, 118, 120, 119, 122, 121, 124, 123, 126, 125, 128, 127, 130, 129, 132, 131, 134, 133, 136, 135, 138, 137,\
-                             139]
-critic_obs_mirror_signs = [-1, 1, -1,\
-                           1, -1, 1,\
-                           1, -1, -1,\
-                           -1, -1, -1, -1, -1, 1, 1, 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, 1, 1, -1, -1, -1, -1,\
-                           -1, -1, -1, -1, -1, 1, 1, 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, 1, 1, -1, -1, -1, -1,\
-                           -1, -1, -1, -1, -1, 1, 1, 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, 1, 1, -1, -1, -1, -1,\
-                            1, -1, 1,\
+                             92, 91]\
+                            + joint_acc_mirror_indices + joint_torques_mirror_indices +\
+                            [139]
+height_scan_mirror_indices, height_scan_mirror_signs = generate_height_scan_mirror(140, 17, 11)
+critic_obs_mirror_indices += height_scan_mirror_indices
+critic_obs_mirror_signs = policy_obs_mirror_signs +\
+                           [1, -1, 1,\
                             1, 1,\
                             1, -1, 1, 1, -1, 1,\
                             1, 1,\
-                            1, 1,\
-                            -1, -1, -1, -1, -1, 1, 1, 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, 1, 1, -1, -1, -1, -1,\
-                            -1, -1, -1, -1, -1, 1, 1, 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, 1, 1, -1, -1, -1, -1,\
-                            1]
+                            1, 1]\
+                            + joint_acc_mirror_signs + joint_torques_mirror_signs +\
+                            [1]
+critic_obs_mirror_signs += height_scan_mirror_signs
 act_mirror_indices = [1, 0, 2, 4, 3, 6, 5, 8, 7, 10, 9, 12, 11, 14, 13, 16, 15, 18, 17, 20, 19, 22, 21]
 act_mirror_signs = [-1, -1, -1, -1, -1, 1, 1, 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, 1, 1, -1, -1, -1, -1]
 policy_obs_mirror_indices_expanded = []
@@ -200,7 +210,7 @@ policy_obs_mirror_signs_expanded = policy_obs_mirror_signs * 10
 
 critic_obs_mirror_indices_expanded = []
 for i in range(10):
-    offset = i * 140
+    offset = i * 327
     for idx in critic_obs_mirror_indices:
         critic_obs_mirror_indices_expanded.append(idx + offset)
 critic_obs_mirror_signs_expanded = critic_obs_mirror_signs * 10
@@ -254,10 +264,10 @@ class ATOM01FlatEnvCfg(BaseEnvCfg):
         self.scene.robot = ATOM01_CFG
         self.scene.terrain_type = "generator"
         self.scene.terrain_generator = GRAVEL_TERRAINS_CFG
-        self.robot.terminate_contacts_body_names = [".*torso.*"]
+        self.robot.terminate_contacts_body_names = ["torso_link", "base_link", ".*_elbow_pitch.*", ".*_elbow_yaw.*"]
         self.robot.feet_body_names = [".*ankle_roll.*"]
-        self.domain_rand.events.add_base_mass.params["asset_cfg"].body_names = [".*torso.*"]
-        self.domain_rand.events.randomize_rigid_body_com.params["asset_cfg"].body_names = [".*torso.*"]
+        self.domain_rand.events.add_base_mass.params["asset_cfg"].body_names = ["torso_link"]
+        self.domain_rand.events.randomize_rigid_body_com.params["asset_cfg"].body_names = ["torso_link"]
         self.domain_rand.events.scale_link_mass.params["asset_cfg"].body_names = ["left_.*_link", "right_.*_link"]
         self.domain_rand.events.scale_actuator_gains.params["asset_cfg"].joint_names = [".*_joint"]
         self.domain_rand.events.scale_joint_parameters.params["asset_cfg"].joint_names = [".*_joint"]
@@ -306,11 +316,9 @@ class ATOM01RoughEnvCfg(ATOM01FlatEnvCfg):
         super().__post_init__()
         self.scene.height_scanner.enable_height_scan = True
         self.scene.terrain_generator = ROUGH_TERRAINS_CFG
-        self.robot.actor_obs_history_length = 1
-        self.robot.critic_obs_history_length = 1
-        self.reward.track_lin_vel_xy_exp.weight = 1.5
-        self.reward.track_ang_vel_z_exp.weight = 1.5
-        self.reward.lin_vel_z_l2.weight = -0.25
+        self.reward.track_lin_vel_xy_exp.weight = 1.0
+        self.reward.track_ang_vel_z_exp.weight = 1.0
+        self.reward.lin_vel_z_l2.weight = -0.1
 
 
 @configclass
@@ -320,9 +328,3 @@ class ATOM01RoughAgentCfg(ATOM01FlatAgentCfg):
 
     def __post_init__(self):
         super().__post_init__()
-        self.policy.class_name = "ActorCriticRecurrent"
-        self.policy.actor_hidden_dims = [256, 256, 128]
-        self.policy.critic_hidden_dims = [256, 256, 128]
-        self.policy.rnn_hidden_size = 256
-        self.policy.rnn_num_layers = 1
-        self.policy.rnn_type = "lstm"
