@@ -206,18 +206,20 @@ def upward(env: BaseEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) ->
     return reward
 
 
-def joint_pos_penalty(
+def stand_still(
     env: BaseEnv,
     asset_cfg: SceneEntityCfg,
+    pos_weight: float = 1.0,
+    vel_weight: float = 1.0,
 ) -> torch.Tensor:
     """Penalize joint position error from default on the articulation."""
     # extract the used quantities (to enable type-hinting)
     asset: Articulation = env.scene[asset_cfg.name]
     cmd = torch.linalg.norm(env.command_generator.command[:, :3], dim=1)
     body_vel = torch.linalg.norm(asset.data.root_lin_vel_b[:, :2], dim=1)
-    running_reward = torch.linalg.norm(
+    running_reward = pos_weight * torch.linalg.norm(
         (asset.data.joint_pos[:, asset_cfg.joint_ids] - asset.data.default_joint_pos[:, asset_cfg.joint_ids]), dim=1
-    )
+    ) + vel_weight * torch.linalg.norm(asset.data.joint_vel[:, asset_cfg.joint_ids], dim=1)
     reward = torch.where(
         torch.logical_or(cmd > 0.01, body_vel > 0.5),
         0.0,
