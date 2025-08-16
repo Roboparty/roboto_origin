@@ -744,7 +744,7 @@
     name="torso_link">
     <inertial>
       <origin
-        xyz="0 0 0"
+        xyz="-0.00229833 -0.00003201 0.09565750"
         rpy="0 0 0" />
       <mass
         value="6.57129050" />
