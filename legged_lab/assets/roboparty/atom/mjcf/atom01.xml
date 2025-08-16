@@ -150,7 +150,7 @@
         </body>
       </body>
       <body name="torso_link" pos="-0.058434 -0.00031196 0.11805">
-        <inertial pos="0 0 0" mass="6.57129" diaginertia="0.123213 0.109205 0.0332715"/>
+        <inertial pos="-0.00229833 -0.00003201 0.09565750" mass="6.57129" diaginertia="0.123213 0.109205 0.0332715"/>
         <joint name="torso_joint" pos="0 0 0" axis="0 0 1" range="-2.62 2.62" class="waist_joint_param"/>
         <geom type="mesh" rgba="0.752941 0.752941 0.752941 1" mesh="torso_link" class="visualgeom"/>
         <body name="left_arm_pitch_link" pos="0 0.12175 0.20518">
