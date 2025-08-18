@@ -257,6 +257,6 @@ def feet_height(env: BaseEnv, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntity
     single_stance = contacts.sum(dim=1) == 1
     # feet height should be closed to target feet height at the peak
     rew_pos = feet_height > threshold
-    reward = torch.where(torch.logical_and(contacts, single_stance.unsqueeze(-1)), rew_pos.float(), 0.0).sum(dim=1)
+    reward = torch.where(torch.logical_and(~contacts, single_stance.unsqueeze(-1)), rew_pos.float(), 0.0).sum(dim=1)
     reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
     return reward
