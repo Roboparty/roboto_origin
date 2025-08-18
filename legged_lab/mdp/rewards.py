@@ -216,7 +216,9 @@ def stand_still(
     # extract the used quantities (to enable type-hinting)
     asset: Articulation = env.scene[asset_cfg.name]
     cmd = torch.linalg.norm(env.command_generator.command[:, :3], dim=1)
-    body_vel = torch.linalg.norm(asset.data.root_lin_vel_b[:, :2], dim=1)
+    body_lin_vel = torch.linalg.norm(asset.data.root_lin_vel_b[:, :2], dim=1)
+    body_ang_vel = torch.abs(asset.data.root_ang_vel_b[:, 2])
+    body_vel = body_ang_vel + body_lin_vel
     running_reward = pos_weight * torch.linalg.norm(
         (asset.data.joint_pos[:, asset_cfg.joint_ids] - asset.data.default_joint_pos[:, asset_cfg.joint_ids]), dim=1
     ) + vel_weight * torch.linalg.norm(asset.data.joint_vel[:, asset_cfg.joint_ids], dim=1)
@@ -242,10 +244,10 @@ def feet_height(env: BaseEnv, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntity
     asset: Articulation = env.scene[asset_cfg.name]
     feet_height = torch.stack(
         [
-            env.scene[sensor_cfg.name].data.pos_w[:, 2]
-            - env.scene[sensor_cfg.name].data.ray_hits_w[..., 2].mean(dim=-1)
-            for sensor_cfg in [sensor_cfg1, sensor_cfg2]
-            if sensor_cfg is not None
+            env.scene[sensor.name].data.pos_w[:, 2]
+            - env.scene[sensor.name].data.ray_hits_w[..., 2].mean(dim=-1)
+            for sensor in [sensor_cfg1, sensor_cfg2]
+            if sensor is not None
         ],
         dim=-1,
     )
@@ -255,6 +257,6 @@ def feet_height(env: BaseEnv, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntity
     single_stance = contacts.sum(dim=1) == 1
     # feet height should be closed to target feet height at the peak
     rew_pos = feet_height > threshold
-    reward = torch.where(single_stance.unsqueeze(-1), rew_pos.float(), 0.0).sum(dim=1)
+    reward = torch.where(torch.logical_and(contacts, single_stance.unsqueeze(-1)), rew_pos.float(), 0.0).sum(dim=1)
     reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
     return reward
