@@ -79,7 +79,7 @@
     <light directional="true" diffuse=".6 .6 .6" specular="0.2 0.2 0.2" pos="0 0 4" dir="0 0 -1"/>
     <geom name="ground" type="plane" size="0 0 1" pos="0.001 0 0" quat="1 0 0 0" material="matplane" condim="1" conaffinity='15'/>
 
-    <body name="base_link" pos="0 0 0.76">
+    <body name="base_link" pos="0 0 0.75">
       <site name='imu' size='0.01' pos='0.0 0 0.0'/>
       <inertial pos="-0.077749 -0.00027844 0.03283" quat="-0.00169048 0.848368 0.0018474 0.5294" mass="5.18129" diaginertia="0.0635131 0.0520745 0.0274799"/>
       <joint type='slide' axis='1 0 0' limited='false' />
