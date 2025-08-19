@@ -34,7 +34,7 @@ ATOM01_CFG = ArticulationCfg(
         ),
     ),
     init_state=ArticulationCfg.InitialStateCfg(
-        pos=(0.0, 0.0, 0.7),
+        pos=(0.0, 0.0, 0.75),
         joint_pos={
             "left_thigh_pitch_joint": -0.24,
             "left_knee_joint": 0.48,
