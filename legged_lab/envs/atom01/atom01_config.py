@@ -40,16 +40,16 @@ from legged_lab.terrains import GRAVEL_TERRAINS_CFG, ROUGH_TERRAINS_CFG
 
 @configclass
 class ATOM01RewardCfg(RewardCfg):
-    track_lin_vel_xy_exp = RewTerm(func=mdp.track_lin_vel_xy_yaw_frame_exp, weight=2.0, params={"std": 0.2})
-    track_ang_vel_z_exp = RewTerm(func=mdp.track_ang_vel_z_world_exp, weight=2.0, params={"std": 0.2})
-    lin_vel_z_l2 = RewTerm(func=mdp.lin_vel_z_l2, weight=-0.4)
+    track_lin_vel_xy_exp = RewTerm(func=mdp.track_lin_vel_xy_yaw_frame_exp, weight=2.5, params={"std": 0.2})
+    track_ang_vel_z_exp = RewTerm(func=mdp.track_ang_vel_z_world_exp, weight=2.5, params={"std": 0.2})
+    lin_vel_z_l2 = RewTerm(func=mdp.lin_vel_z_l2, weight=-0.2)
     ang_vel_xy_l2 = RewTerm(func=mdp.ang_vel_xy_l2, weight=-0.1)
-    energy = RewTerm(func=mdp.energy, weight=-1e-4)
+    energy = RewTerm(func=mdp.energy, weight=-7.5e-5)
     joint_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1e-5)
     joint_vel_l2 = RewTerm(func=mdp.joint_vel_l2, weight=-2e-4)
     dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-7)
-    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-2e-2)
-    action_smoothness_l2 = RewTerm(func=mdp.action_smoothness_l2, weight=-2e-2)
+    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-1e-2)
+    action_smoothness_l2 = RewTerm(func=mdp.action_smoothness_l2, weight=-1e-2)
     undesired_contacts = RewTerm(
         func=mdp.undesired_contacts,
         weight=-1.0,
@@ -59,7 +59,7 @@ class ATOM01RewardCfg(RewardCfg):
     termination_penalty = RewTerm(func=mdp.is_terminated, weight=-200.0)
     feet_air_time = RewTerm(
         func=mdp.feet_air_time_positive_biped,
-        weight=1.2,
+        weight=1.4,
         params={"sensor_cfg": SceneEntityCfg("contact_sensor", body_names=".*ankle_roll.*"), "threshold": 0.5},
     )
     feet_slide = RewTerm(
@@ -81,13 +81,13 @@ class ATOM01RewardCfg(RewardCfg):
     )
     feet_distance = RewTerm(
         func=mdp.body_distance_y,
-        weight=0.4,
-        params={"asset_cfg": SceneEntityCfg("robot", body_names=[".*ankle_roll.*"]), "min": 0.185, "max": 0.7},
+        weight=0.2,
+        params={"asset_cfg": SceneEntityCfg("robot", body_names=[".*ankle_roll.*"]), "min": 0.17, "max": 0.51},
     )
     knee_distance = RewTerm(
         func=mdp.body_distance_y,
-        weight=0.4,
-        params={"asset_cfg": SceneEntityCfg("robot", body_names=[".*_knee.*"]), "min": 0.185, "max": 0.35},
+        weight=0.2,
+        params={"asset_cfg": SceneEntityCfg("robot", body_names=[".*_knee.*"]), "min": 0.18, "max": 0.35},
     )
     feet_stumble = RewTerm(
         func=mdp.feet_stumble,
@@ -97,7 +97,7 @@ class ATOM01RewardCfg(RewardCfg):
     dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=-1.0)
     joint_deviation_hip = RewTerm(
         func=mdp.joint_deviation_l1,
-        weight=-0.1,
+        weight=-0.06,
         params={
             "asset_cfg": SceneEntityCfg(
                 "robot", joint_names=[".*_thigh_yaw.*", ".*_thigh_roll.*", ".*_ankle_roll.*"]
@@ -130,24 +130,21 @@ class ATOM01RewardCfg(RewardCfg):
     )
     feet_contact_without_cmd = RewTerm(
         func=mdp.feet_contact_without_cmd,
-        weight=0.2,
-        params={"sensor_cfg": SceneEntityCfg("contact_sensor", body_names=[".*ankle_roll.*"])},
-    )
-    no_feet_contact = RewTerm(
-        func=mdp.no_feet_contact,
-        weight=-0.2,
+        weight=0.4,
         params={"sensor_cfg": SceneEntityCfg("contact_sensor", body_names=[".*ankle_roll.*"])},
     )
     upward = RewTerm(func=mdp.upward, weight=0.2)
-    stand_still = RewTerm(func=mdp.stand_still, weight=-0.5, params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*"), "pos_weight": 1.0, "vel_weight": 0.1})
+    stand_still = RewTerm(func=mdp.stand_still, weight=-0.4, params={"pos_cfg": SceneEntityCfg("robot", joint_names=[".*_arm.*", ".*_elbow.*", ".*torso.*"]),
+                                                                     "vel_cfg": SceneEntityCfg("robot", joint_names=[".*_thigh.*", ".*_knee.*", ".*_ankle.*"]), 
+                                                                     "pos_weight": 1.0, "vel_weight": 0.1})
     feet_height = RewTerm(
         func=mdp.feet_height,
-        weight=0.1,
+        weight=0.4,
         params={"sensor_cfg": SceneEntityCfg("contact_sensor", body_names=".*ankle_roll.*"),
                 "asset_cfg": SceneEntityCfg("robot", body_names=".*_ankle_roll.*"),
                 "sensor_cfg1": SceneEntityCfg("left_feet_scanner"),
                 "sensor_cfg2": SceneEntityCfg("right_feet_scanner"),
-                "ankle_height":0.035,"threshold":0.03})
+                "ankle_height":0.035,"threshold":0.04})
 
 def generate_height_scan_mirror(start_idx=140, rows=17, cols=11):
     mirror_indices = []
@@ -215,6 +212,55 @@ for i in range(10):
         critic_obs_mirror_indices_expanded.append(idx + offset)
 critic_obs_mirror_signs_expanded = critic_obs_mirror_signs * 10
 
+# joint_pos_mirror_indices, joint_pos_mirror_signs = generate_joint_mirror(9)
+# joint_vel_mirror_indices, joint_vel_mirror_signs = generate_joint_mirror(32)
+# action_mirror_indices, action_mirror_signs = generate_joint_mirror(55)
+# policy_obs_mirror_indices = [0, 1, 2,\
+#                              3, 4, 5,\
+#                              6, 7, 8]\
+#                             + joint_pos_mirror_indices + joint_vel_mirror_indices + action_mirror_indices\
+#                             + [78]
+# policy_obs_mirror_signs = [-1, 1, -1,\
+#                            1, -1, 1,\
+#                            1, -1, -1] + joint_pos_mirror_signs + joint_vel_mirror_signs + action_mirror_signs\
+#                            + [1]
+# joint_acc_mirror_indices, joint_acc_mirror_signs = generate_joint_mirror(94)
+# joint_torques_mirror_indices, joint_torques_mirror_signs = generate_joint_mirror(117)
+# critic_obs_mirror_indices = policy_obs_mirror_indices +\
+#                             [79, 80, 81,\
+#                              83, 82,\
+#                              87, 88, 89, 84, 85, 86,\
+#                              91, 90,\
+#                              93, 92]\
+#                             + joint_acc_mirror_indices + joint_torques_mirror_indices +\
+#                             [140]
+# height_scan_mirror_indices, height_scan_mirror_signs = generate_height_scan_mirror(141, 17, 11)
+# critic_obs_mirror_indices += height_scan_mirror_indices
+# critic_obs_mirror_signs = policy_obs_mirror_signs +\
+#                            [1, -1, 1,\
+#                             1, 1,\
+#                             1, -1, 1, 1, -1, 1,\
+#                             1, 1,\
+#                             1, 1]\
+#                             + joint_acc_mirror_signs + joint_torques_mirror_signs +\
+#                             [1]
+# critic_obs_mirror_signs += height_scan_mirror_signs
+# act_mirror_indices = [1, 0, 2, 4, 3, 6, 5, 8, 7, 10, 9, 12, 11, 14, 13, 16, 15, 18, 17, 20, 19, 22, 21]
+# act_mirror_signs = [-1, -1, -1, -1, -1, 1, 1, 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, 1, 1, -1, -1, -1, -1]
+# policy_obs_mirror_indices_expanded = []
+# for i in range(10):
+#     offset = i * 79
+#     for idx in policy_obs_mirror_indices:
+#         policy_obs_mirror_indices_expanded.append(idx + offset)
+# policy_obs_mirror_signs_expanded = policy_obs_mirror_signs * 10
+
+# critic_obs_mirror_indices_expanded = []
+# for i in range(10):
+#     offset = i * 328
+#     for idx in critic_obs_mirror_indices:
+#         critic_obs_mirror_indices_expanded.append(idx + offset)
+# critic_obs_mirror_signs_expanded = critic_obs_mirror_signs * 10
+
 def mirror_policy_observation(policy_obs):
     mirrored_policy_obs = policy_obs[..., policy_obs_mirror_indices_expanded]
     policy_obs_mirror_signs_tensor_expanded = torch.tensor(policy_obs_mirror_signs_expanded, 
@@ -264,14 +310,19 @@ class ATOM01FlatEnvCfg(BaseEnvCfg):
         self.scene.robot = ATOM01_CFG
         self.scene.terrain_type = "generator"
         self.scene.terrain_generator = GRAVEL_TERRAINS_CFG
+        self.scene.height_scanner.enable_height_scan = True
         self.robot.terminate_contacts_body_names = ["torso_link", "base_link", ".*_elbow_pitch.*", ".*_elbow_yaw.*"]
         self.robot.feet_body_names = [".*ankle_roll.*"]
         self.domain_rand.events.add_base_mass.params["asset_cfg"].body_names = ["torso_link"]
-        self.domain_rand.events.randomize_rigid_body_com.params["asset_cfg"].body_names = ["torso_link"]
+        self.domain_rand.events.randomize_rigid_body_com.params["asset_cfg"].body_names = ["torso_link", "base_link"]
         self.domain_rand.events.scale_link_mass.params["asset_cfg"].body_names = ["left_.*_link", "right_.*_link"]
         self.domain_rand.events.scale_actuator_gains.params["asset_cfg"].joint_names = [".*_joint"]
         self.domain_rand.events.scale_joint_parameters.params["asset_cfg"].joint_names = [".*_joint"]
         self.robot.action_scale = 0.25
+        # self.interrupt.use_interrupt = False
+        self.domain_rand.action_delay.enable = False
+        self.domain_rand.action_delay.params["min_delay"] = 1
+        self.domain_rand.action_delay.params["max_delay"] = 4
 
 
 @configclass
