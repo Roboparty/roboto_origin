@@ -320,7 +320,7 @@ if __name__ == '__main__':
         class robot_config:
             kps = np.array([125, 125, 150, 150, 50, 50, 125, 125, 150, 150, 40, 40, 150, 60, 60, 60, 40, 20, 60, 60, 60, 40, 20], dtype=np.double)
             kds = np.array([4.0, 4.0, 5.0, 5.0, 1.5, 1.5, 4.0, 4.0, 5.0, 5.0, 1.5, 1.5, 5.0, 2.0, 2.0, 2.0, 1.5, 1.0, 2.0, 2.0, 2.0, 1.5, 1.0], dtype=np.double)
-            default_pos = np.array([0, 0, -0.24, 0.48, -0.24, 0, 0, 0, -0.24, 0.48, -0.24, 0, 0, 0.1, 0.07, 0, 1., 0, 0.1, -0.07, 0, 1., 0], dtype=np.double)
+            default_pos = np.array([0, 0, -0.3, 0.6, -0.3, 0, 0, 0, -0.3, 0.6, -0.3, 0, 0, 0.12, 0.07, 0, 1., 0, 0.12, -0.07, 0, 1., 0], dtype=np.double)
             tau_limit = 200. * np.ones(23, dtype=np.double)
             frame_stack = 10
             num_single_obs = 78
