@@ -110,7 +110,9 @@ def feet_air_time_positive_biped(env: BaseEnv, threshold: float, sensor_cfg: Sce
     reward = torch.min(torch.where(single_stance.unsqueeze(-1), in_mode_time, 0.0), dim=1)[0]
     reward = torch.clamp(reward, max=threshold)
     # no reward for zero command
-    reward *= (torch.linalg.norm(env.command_generator.command[:, :3], dim=1)) > 0.01
+    reward *= (
+        torch.norm(env.command_generator.command[:, :2], dim=1) + torch.abs(env.command_generator.command[:, 2])
+    ) > 0.1
     reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
     return reward
 
@@ -175,26 +177,11 @@ def feet_contact_without_cmd(env: BaseEnv, sensor_cfg: SceneEntityCfg) -> torch.
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
     # compute the reward
     contacts = contact_sensor.data.net_forces_w_history[:, :, sensor_cfg.body_ids, :].norm(dim=-1).max(dim=1)[0] > 5.0
-    reward = torch.sum(contacts, dim=-1).float()
-    reward *= torch.linalg.norm(env.command_generator.command[:, :3], dim=1) < 0.01
+    reward = (torch.sum(contacts, dim=-1) == 2).float()
+    reward *= (
+        torch.norm(env.command_generator.command[:, :2], dim=1) + torch.abs(env.command_generator.command[:, 2])
+    ) < 0.1
     reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
-    return reward
-
-
-def no_feet_contact(env: BaseEnv, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
-    """Penalize no feet contact"""
-    # extract the used quantities (to enable type-hinting)
-    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
-    asset: Articulation = env.scene[asset_cfg.name]
-    # compute the reward
-    cmd = torch.linalg.norm(env.command_generator.command[:, :3], dim=1)
-    contacts = contact_sensor.data.net_forces_w_history[:, :, sensor_cfg.body_ids, :].norm(dim=-1).max(dim=1)[0] > 5.0
-    no_contact = contacts.sum(dim=1) == 0
-    reward = torch.where(
-        torch.logical_and(no_contact, cmd < 0.5),
-        1.0,
-        0.0,
-    )
     return reward
 
 
@@ -208,22 +195,25 @@ def upward(env: BaseEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) ->
 
 def stand_still(
     env: BaseEnv,
-    asset_cfg: SceneEntityCfg,
+    pos_cfg: SceneEntityCfg,
+    vel_cfg: SceneEntityCfg,
     pos_weight: float = 1.0,
     vel_weight: float = 1.0,
 ) -> torch.Tensor:
     """Penalize joint position error from default on the articulation."""
     # extract the used quantities (to enable type-hinting)
-    asset: Articulation = env.scene[asset_cfg.name]
-    cmd = torch.linalg.norm(env.command_generator.command[:, :3], dim=1)
+    asset: Articulation = env.scene["robot"]
+    cmd = (
+        torch.norm(env.command_generator.command[:, :2], dim=1) + torch.abs(env.command_generator.command[:, 2])
+    )
     body_lin_vel = torch.linalg.norm(asset.data.root_lin_vel_b[:, :2], dim=1)
     body_ang_vel = torch.abs(asset.data.root_ang_vel_b[:, 2])
     body_vel = body_ang_vel + body_lin_vel
     running_reward = pos_weight * torch.linalg.norm(
-        (asset.data.joint_pos[:, asset_cfg.joint_ids] - asset.data.default_joint_pos[:, asset_cfg.joint_ids]), dim=1
-    ) + vel_weight * torch.linalg.norm(asset.data.joint_vel[:, asset_cfg.joint_ids], dim=1)
+        (asset.data.joint_pos[:, pos_cfg.joint_ids] - asset.data.default_joint_pos[:, pos_cfg.joint_ids]), dim=1
+    ) + vel_weight * torch.linalg.norm(asset.data.joint_vel[:, vel_cfg.joint_ids], dim=1)
     reward = torch.where(
-        torch.logical_or(cmd > 0.01, body_vel > 0.5),
+        torch.logical_or(cmd > 0.1, body_vel > 0.5),
         0.0,
         running_reward,
     )
@@ -258,5 +248,8 @@ def feet_height(env: BaseEnv, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntity
     # feet height should be closed to target feet height at the peak
     rew_pos = feet_height > threshold
     reward = torch.where(torch.logical_and(~contacts, single_stance.unsqueeze(-1)), rew_pos.float(), 0.0).sum(dim=1)
+    reward *= (
+        torch.norm(env.command_generator.command[:, :2], dim=1) + torch.abs(env.command_generator.command[:, 2])
+    ) > 0.1
     reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
     return reward
