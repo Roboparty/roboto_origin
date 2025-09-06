@@ -140,7 +140,7 @@ class EventCfg:
         mode="startup",
         params={
             "asset_cfg": SceneEntityCfg("robot", body_names=MISSING),
-            "com_range": {"x": (-0.05, 0.05), "y": (-0.05, 0.05), "z": (-0.1, 0.1)},
+            "com_range": {"x": (-0.05, 0.05), "y": (-0.05, 0.05), "z": (-0.05, 0.05)},
         },
     )
     scale_link_mass = EventTerm(
@@ -159,8 +159,8 @@ class EventCfg:
         mode="startup",
         params={
             "asset_cfg": SceneEntityCfg("robot", joint_names=MISSING),
-            "stiffness_distribution_params": (0.8, 1.2),
-            "damping_distribution_params": (0.8, 1.2),
+            "stiffness_distribution_params": (0.9, 1.1),
+            "damping_distribution_params": (0.9, 1.1),
             "operation": "scale",
         },
     )
@@ -227,3 +227,14 @@ class SimCfg:
     dt: float = 0.005
     decimation: int = 4
     physx: PhysxCfg = PhysxCfg()
+
+@configclass
+class InterruptCfg:
+    use_interrupt: bool = False
+    max_curriculum: float = 1.0
+    interrupt_ratio: float = 0.5
+    interrupt_joint_names: list = []
+    interrupt_scale : list = []
+    interrupt_lower_bound: list = []
+    interrupt_init_range: float = 0.2
+    interrupt_update_step: int = 30

@@ -18,7 +18,12 @@ from legged_lab.envs.atom01.atom01_config import (
     ATOM01RoughAgentCfg,
     ATOM01RoughEnvCfg,
 )
+from legged_lab.envs.atom01.atom01_interrupt_config import (
+    ATOM01InterruptAgentCfg,
+    ATOM01InterruptEnvCfg
+)
 from legged_lab.utils.task_registry import task_registry
 
 task_registry.register("atom01_rough", BaseEnv, ATOM01RoughEnvCfg(), ATOM01RoughAgentCfg())
 task_registry.register("atom01_flat", BaseEnv, ATOM01FlatEnvCfg(), ATOM01FlatAgentCfg())
+task_registry.register("atom01_interrupt", BaseEnv, ATOM01InterruptEnvCfg(), ATOM01InterruptAgentCfg())

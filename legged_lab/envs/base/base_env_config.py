@@ -41,6 +41,7 @@ from .base_config import (
     RewardCfg,
     RobotCfg,
     SimCfg,
+    InterruptCfg,
 )
 
 
@@ -136,7 +137,7 @@ class BaseEnvCfg:
                 mode="startup",
                 params={
                     "asset_cfg": SceneEntityCfg("robot", body_names=MISSING),
-                    "com_range": {"x": (-0.05, 0.05), "y": (-0.05, 0.05), "z": (-0.1, 0.1)},
+                    "com_range": {"x": (-0.05, 0.05), "y": (-0.05, 0.05), "z": (-0.05, 0.05)},
                 },
             ),
             scale_link_mass = EventTerm(
@@ -155,8 +156,8 @@ class BaseEnvCfg:
                 mode="startup",
                 params={
                     "asset_cfg": SceneEntityCfg("robot", joint_names=MISSING),
-                    "stiffness_distribution_params": (0.8, 1.2),
-                    "damping_distribution_params": (0.8, 1.2),
+                    "stiffness_distribution_params": (0.9, 1.1),
+                    "damping_distribution_params": (0.9, 1.1),
                     "operation": "scale",
                 },
             ),
@@ -197,12 +198,49 @@ class BaseEnvCfg:
                 func=mdp.push_by_setting_velocity,
                 mode="interval",
                 interval_range_s=(10.0, 15.0),
-                params={"velocity_range": {"x": (-1.0, 1.0), "y": (-1.0, 1.0)}},
+                params={"velocity_range": {"x": (-1.0, 1.0), "y": (-1.0, 1.0), "yaw": (-1.0, 1.0)}},
             ),
         ),
         action_delay=ActionDelayCfg(enable=False, params={"max_delay": 5, "min_delay": 0}),
     )
     sim: SimCfg = SimCfg(dt=0.005, decimation=4, physx=PhysxCfg(gpu_max_rigid_patch_count=10 * 2**15))
+    interrupt: InterruptCfg = InterruptCfg(
+        use_interrupt = False,
+        max_curriculum = 1.0,
+        interrupt_ratio = 0.5,
+        interrupt_joint_names = [
+            "left_arm_pitch_joint",
+            "left_arm_roll_joint",
+            "left_arm_yaw_joint",
+            "left_elbow_pitch_joint",
+            "right_arm_pitch_joint",
+            "right_arm_roll_joint",
+            "right_arm_yaw_joint",
+            "right_elbow_pitch_joint",
+        ],
+    interrupt_scale = [
+            3.14, # Arm Pitch -1.57~1.57
+            1.25, # Arm Roll, -0.25~1.0
+            3.14, # Arm Yaw,  -1.57~1.57
+            2.17, # Elbow Pitch, -0.6~1.57
+            3.14, # Arm Pitch -1.57~1.57
+            1.25, # Arm Roll, -1.0~0.25
+            3.14, # Arm Yaw,  -1.57~1.57
+            2.17, # Elbow Pitch, -0.6~1.57
+        ], # Uniform Distribution Noise for each joint.
+    interrupt_lower_bound = [
+            -1.57,
+            -0.25, 
+            -1.57, 
+            -0.6, 
+            -1.57, 
+            -1.0, 
+            -1.57,
+            -0.6,
+        ],
+        interrupt_init_range = 0.2,
+        interrupt_update_step = 30,
+    )
 
     def __post_init__(self):
         pass
