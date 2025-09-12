@@ -417,10 +417,14 @@ class BaseEnv(VecEnv):
         targets = self.interrupt_scale * torch.rand((self.num_envs, len(self.cfg.interrupt.interrupt_joint_names)), device=self.device) + self.interrupt_lower_bound
 
         # clip interrupt
-        left_env_mask = targets[:, 1] < 0.5
-        targets[left_env_mask][:, [2, 3]] = 0
-        right_env_mask =  targets[:, 5] > -0.5
-        targets[right_env_mask][:, [6, 7]] = 0
+        left_env_mask1 = targets[:, 1] < 0.5
+        targets[left_env_mask1][:, 2] = torch.clamp(targets[left_env_mask1][:, 2], min=-1.57, max=0.85)
+        left_env_mask2 = targets[:, 1] < 0
+        targets[left_env_mask2][:, [2, 3]] = 0
+        right_env_mask1 =  targets[:, 5] > -0.5
+        targets[right_env_mask1][:, 6] = torch.clamp(targets[right_env_mask1][:, 2], min=-0.85, max=1.57)
+        right_env_mask2 =  targets[:, 5] > 0
+        targets[right_env_mask2][:, [6, 7]] = 0
 
         return torch.clamp(
             targets - self.robot.data.default_joint_pos[:, self.interrupt_joint_cfg.joint_ids], 

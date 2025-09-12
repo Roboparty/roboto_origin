@@ -222,21 +222,21 @@ class BaseEnvCfg:
             3.14, # Arm Pitch -1.57~1.57
             1.25, # Arm Roll, -0.25~1.0
             3.14, # Arm Yaw,  -1.57~1.57
-            2.17, # Elbow Pitch, -0.6~1.57
+            2.07, # Elbow Pitch, -0.5~1.57
             3.14, # Arm Pitch -1.57~1.57
             1.25, # Arm Roll, -1.0~0.25
             3.14, # Arm Yaw,  -1.57~1.57
-            2.17, # Elbow Pitch, -0.6~1.57
+            2.07, # Elbow Pitch, -0.5~1.57
         ], # Uniform Distribution Noise for each joint.
     interrupt_lower_bound = [
             -1.57,
             -0.25, 
             -1.57, 
-            -0.6, 
+            -0.5, 
             -1.57, 
             -1.0, 
             -1.57,
-            -0.6,
+            -0.5,
         ],
         interrupt_init_range = 0.2,
         interrupt_update_step = 30,
