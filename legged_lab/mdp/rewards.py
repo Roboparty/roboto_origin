@@ -128,11 +128,11 @@ def feet_slide(
     return reward
 
 
-def body_force(
+def body_force_z(
     env: BaseEnv, sensor_cfg: SceneEntityCfg, threshold: float = 500, max_reward: float = 400
 ) -> torch.Tensor:
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
-    reward = contact_sensor.data.net_forces_w[:, sensor_cfg.body_ids, 2].norm(dim=-1)
+    reward = torch.sum(torch.abs(contact_sensor.data.net_forces_w[:, sensor_cfg.body_ids, 2]), dim=1)
     reward[reward < threshold] = 0
     reward[reward > threshold] -= threshold
     reward = reward.clamp(min=0, max=max_reward)
@@ -209,13 +209,16 @@ def stand_still(
     body_lin_vel = torch.linalg.norm(asset.data.root_lin_vel_b[:, :2], dim=1)
     body_ang_vel = torch.abs(asset.data.root_ang_vel_b[:, 2])
     body_vel = body_ang_vel + body_lin_vel
-    running_reward = pos_weight * torch.linalg.norm(
+    pos_reward = pos_weight * torch.sum(torch.abs
         (asset.data.joint_pos[:, pos_cfg.joint_ids] - asset.data.default_joint_pos[:, pos_cfg.joint_ids]), dim=1
-    ) + vel_weight * torch.linalg.norm(asset.data.joint_vel[:, vel_cfg.joint_ids], dim=1)
+    )
+    if env.cfg.interrupt.use_interrupt:
+        pos_reward *= ~env.interrupt_mask
+    vel_reward = vel_weight * torch.sum(torch.abs(asset.data.joint_vel[:, vel_cfg.joint_ids]), dim=1)
     reward = torch.where(
         torch.logical_or(cmd > 0.01, body_vel > 0.5),
         0.0,
-        running_reward,
+        pos_reward + vel_reward,
     )
     reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
     return reward
