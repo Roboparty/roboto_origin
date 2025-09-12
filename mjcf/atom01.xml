@@ -40,30 +40,30 @@
     <material name='obstacle'  rgba='0.9 0.6 0.2 1'/>
     <material name='visualgeom'  rgba='0.5 0.9 0.2 1'/>
 
-    <mesh name="base_link"  file="../meshes/base_link.STL"/>
-    <mesh name="left_thigh_yaw_link"  file="../meshes/left_thigh_yaw_link.STL"/>
-    <mesh name="left_thigh_roll_link"  file="../meshes/left_thigh_roll_link.STL"/>
-    <mesh name="left_thigh_pitch_link"  file="../meshes/left_thigh_pitch_link.STL"/>
-    <mesh name="left_knee_link"  file="../meshes/left_knee_link.STL"/>
-    <mesh name="left_ankle_pitch_link"  file="../meshes/left_ankle_pitch_link.STL"/>
-    <mesh name="left_ankle_roll_link"  file="../meshes/left_ankle_roll_link.STL"/>
-    <mesh name="right_thigh_yaw_link"  file="../meshes/right_thigh_yaw_link.STL"/>
-    <mesh name="right_thigh_roll_link"  file="../meshes/right_thigh_roll_link.STL"/>
-    <mesh name="right_thigh_pitch_link"  file="../meshes/right_thigh_pitch_link.STL"/>
-    <mesh name="right_knee_link"  file="../meshes/right_knee_link.STL"/>
-    <mesh name="right_ankle_pitch_link"  file="../meshes/right_ankle_pitch_link.STL"/>
-    <mesh name="right_ankle_roll_link"  file="../meshes/right_ankle_roll_link.STL"/>
-    <mesh name="torso_link"  file="../meshes/torso_link.STL"/>
-    <mesh name="left_arm_pitch_link"  file="../meshes/left_arm_pitch_link.STL"/>
-    <mesh name="left_arm_roll_link"  file="../meshes/left_arm_roll_link.STL"/>
-    <mesh name="left_arm_yaw_link"  file="../meshes/left_arm_yaw_link.STL"/>
-    <mesh name="left_elbow_pitch_link"  file="../meshes/left_elbow_pitch_link.STL"/>
-    <mesh name="left_elbow_yaw_link"  file="../meshes/left_elbow_yaw_link.STL"/>
-    <mesh name="right_arm_pitch_link"  file="../meshes/right_arm_pitch_link.STL"/>
-    <mesh name="right_arm_roll_link"  file="../meshes/right_arm_roll_link.STL"/>
-    <mesh name="right_arm_yaw_link"  file="../meshes/right_arm_yaw_link.STL"/>
-    <mesh name="right_elbow_pitch_link"  file="../meshes/right_elbow_pitch_link.STL"/>
-    <mesh name="right_elbow_yaw_link"  file="../meshes/right_elbow_yaw_link.STL"/>
+    <mesh name="base_link"  file="base_link.STL"/>
+    <mesh name="left_thigh_yaw_link"  file="left_thigh_yaw_link.STL"/>
+    <mesh name="left_thigh_roll_link"  file="left_thigh_roll_link.STL"/>
+    <mesh name="left_thigh_pitch_link"  file="left_thigh_pitch_link.STL"/>
+    <mesh name="left_knee_link"  file="left_knee_link.STL"/>
+    <mesh name="left_ankle_pitch_link"  file="left_ankle_pitch_link.STL"/>
+    <mesh name="left_ankle_roll_link"  file="left_ankle_roll_link.STL"/>
+    <mesh name="right_thigh_yaw_link"  file="right_thigh_yaw_link.STL"/>
+    <mesh name="right_thigh_roll_link"  file="right_thigh_roll_link.STL"/>
+    <mesh name="right_thigh_pitch_link"  file="right_thigh_pitch_link.STL"/>
+    <mesh name="right_knee_link"  file="right_knee_link.STL"/>
+    <mesh name="right_ankle_pitch_link"  file="right_ankle_pitch_link.STL"/>
+    <mesh name="right_ankle_roll_link"  file="right_ankle_roll_link.STL"/>
+    <mesh name="torso_link"  file="torso_link.STL"/>
+    <mesh name="left_arm_pitch_link"  file="left_arm_pitch_link.STL"/>
+    <mesh name="left_arm_roll_link"  file="left_arm_roll_link.STL"/>
+    <mesh name="left_arm_yaw_link"  file="left_arm_yaw_link.STL"/>
+    <mesh name="left_elbow_pitch_link"  file="left_elbow_pitch_link.STL"/>
+    <mesh name="left_elbow_yaw_link"  file="left_elbow_yaw_link.STL"/>
+    <mesh name="right_arm_pitch_link"  file="right_arm_pitch_link.STL"/>
+    <mesh name="right_arm_roll_link"  file="right_arm_roll_link.STL"/>
+    <mesh name="right_arm_yaw_link"  file="right_arm_yaw_link.STL"/>
+    <mesh name="right_elbow_pitch_link"  file="right_elbow_pitch_link.STL"/>
+    <mesh name="right_elbow_yaw_link"  file="right_elbow_yaw_link.STL"/>
 
     <hfield name='hf0' nrow='200' ncol='200' size="10 5 0.2 .1"/>
   </asset>
@@ -268,104 +268,104 @@
   </worldbody>
 
   <actuator>
-    <motor name="left_thigh_yaw" joint="left_thigh_yaw_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
-    <motor name="left_thigh_roll" joint="left_thigh_roll_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
-    <motor name="left_thigh_pitch" joint="left_thigh_pitch_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
-    <motor name="left_knee" joint="left_knee_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
-    <motor name="left_ankle_pitch" joint="left_ankle_pitch_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
-    <motor name="left_ankle_roll" joint="left_ankle_roll_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
-    <motor name="right_thigh_yaw" joint="right_thigh_yaw_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
-    <motor name="right_thigh_roll" joint="right_thigh_roll_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
-    <motor name="right_thigh_pitch" joint="right_thigh_pitch_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
-    <motor name="right_knee" joint="right_knee_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
-    <motor name="right_ankle_pitch" joint="right_ankle_pitch_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
-    <motor name="right_ankle_roll" joint="right_ankle_roll_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
-    <motor name="torso_yaw" joint="torso_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
+    <motor name="left_thigh_yaw_joint" joint="left_thigh_yaw_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
+    <motor name="left_thigh_roll_joint" joint="left_thigh_roll_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
+    <motor name="left_thigh_pitch_joint" joint="left_thigh_pitch_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
+    <motor name="left_knee_joint" joint="left_knee_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
+    <motor name="left_ankle_pitch_joint" joint="left_ankle_pitch_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
+    <motor name="left_ankle_roll_joint" joint="left_ankle_roll_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
+    <motor name="right_thigh_yaw_joint" joint="right_thigh_yaw_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
+    <motor name="right_thigh_roll_joint" joint="right_thigh_roll_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
+    <motor name="right_thigh_pitch_joint" joint="right_thigh_pitch_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
+    <motor name="right_knee_joint" joint="right_knee_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
+    <motor name="right_ankle_pitch_joint" joint="right_ankle_pitch_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
+    <motor name="right_ankle_roll_joint" joint="right_ankle_roll_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
+    <motor name="torso_joint" joint="torso_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
 
-    <motor name="left_arm_pitch" joint="left_arm_pitch_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
-    <motor name="left_arm_roll" joint="left_arm_roll_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
-    <motor name="left_arm_yaw" joint="left_arm_yaw_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
-    <motor name="left_elbow_pitch" joint="left_elbow_pitch_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
-    <motor name="left_elbow_yaw" joint="left_elbow_yaw_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
-    <motor name="right_arm_pitch" joint="right_arm_pitch_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
-    <motor name="right_arm_roll" joint="right_arm_roll_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
-    <motor name="right_arm_yaw" joint="right_arm_yaw_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
-    <motor name="right_elbow_pitch" joint="right_elbow_pitch_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
-    <motor name="right_elbow_yaw" joint="right_elbow_yaw_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
+    <motor name="left_arm_pitch_joint" joint="left_arm_pitch_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
+    <motor name="left_arm_roll_joint" joint="left_arm_roll_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
+    <motor name="left_arm_yaw_joint" joint="left_arm_yaw_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
+    <motor name="left_elbow_pitch_joint" joint="left_elbow_pitch_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
+    <motor name="left_elbow_yaw_joint" joint="left_elbow_yaw_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
+    <motor name="right_arm_pitch_joint" joint="right_arm_pitch_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
+    <motor name="right_arm_roll_joint" joint="right_arm_roll_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
+    <motor name="right_arm_yaw_joint" joint="right_arm_yaw_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
+    <motor name="right_elbow_pitch_joint" joint="right_elbow_pitch_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
+    <motor name="right_elbow_yaw_joint" joint="right_elbow_yaw_joint" gear="1" ctrllimited="true" ctrlrange="-200 200"/>
   </actuator>
 
      <sensor>
-        <actuatorpos name='left_thigh_yaw_p'  actuator='left_thigh_yaw' user='13'/>
-        <actuatorpos name='left_thigh_roll_p'  actuator='left_thigh_roll' user='13'/>
-        <actuatorpos name='left_thigh_pitch_p'  actuator='left_thigh_pitch' user='13'/>
-        <actuatorpos name='left_knee_p'  actuator='left_knee' user='13'/>
-        <actuatorpos name='left_ankle_pitch_p'  actuator='left_ankle_pitch' user='13'/>
-        <actuatorpos name='left_ankle_roll_p'  actuator='left_ankle_roll' user='13'/>
-        <actuatorpos name='right_thigh_yaw_p'  actuator='right_thigh_yaw' user='13'/>
-        <actuatorpos name='right_thigh_roll_p'  actuator='right_thigh_roll' user='13'/>
-        <actuatorpos name='right_thigh_pitch_p'  actuator='right_thigh_pitch' user='13'/>
-        <actuatorpos name='right_knee_p'  actuator='right_knee' user='13'/>
-        <actuatorpos name='right_ankle_pitch_p'  actuator='right_ankle_pitch' user='13'/>
-        <actuatorpos name='right_ankle_roll_p'  actuator='right_ankle_roll' user='13'/>
-        <actuatorpos name='torso_yaw_p'  actuator='torso_yaw' user='13'/>
-        <actuatorpos name='left_arm_pitch_p'  actuator='left_arm_pitch' user='13'/>
-        <actuatorpos name='left_arm_roll_p'  actuator='left_arm_roll' user='13'/>
-        <actuatorpos name='left_arm_yaw_p'  actuator='left_arm_yaw' user='13'/>
-        <actuatorpos name='left_elbow_pitch_p'  actuator='left_elbow_pitch' user='13'/>
-        <actuatorpos name='left_elbow_yaw_p'  actuator='left_elbow_yaw' user='13'/>
-        <actuatorpos name='right_arm_pitch_p'  actuator='right_arm_pitch' user='13'/>
-        <actuatorpos name='right_arm_roll_p'  actuator='right_arm_roll' user='13'/>
-        <actuatorpos name='right_arm_yaw_p'  actuator='right_arm_yaw' user='13'/>
-        <actuatorpos name='right_elbow_pitch_p'  actuator='right_elbow_pitch' user='13'/>
-        <actuatorpos name='right_elbow_yaw_p'  actuator='right_elbow_yaw' user='13'/>
+        <actuatorpos name='left_thigh_yaw_p'  actuator='left_thigh_yaw_joint' user='13'/>
+        <actuatorpos name='left_thigh_roll_p'  actuator='left_thigh_roll_joint' user='13'/>
+        <actuatorpos name='left_thigh_pitch_p'  actuator='left_thigh_pitch_joint' user='13'/>
+        <actuatorpos name='left_knee_p'  actuator='left_knee_joint' user='13'/>
+        <actuatorpos name='left_ankle_pitch_p'  actuator='left_ankle_pitch_joint' user='13'/>
+        <actuatorpos name='left_ankle_roll_p'  actuator='left_ankle_roll_joint' user='13'/>
+        <actuatorpos name='right_thigh_yaw_p'  actuator='right_thigh_yaw_joint' user='13'/>
+        <actuatorpos name='right_thigh_roll_p'  actuator='right_thigh_roll_joint' user='13'/>
+        <actuatorpos name='right_thigh_pitch_p'  actuator='right_thigh_pitch_joint' user='13'/>
+        <actuatorpos name='right_knee_p'  actuator='right_knee_joint' user='13'/>
+        <actuatorpos name='right_ankle_pitch_p'  actuator='right_ankle_pitch_joint' user='13'/>
+        <actuatorpos name='right_ankle_roll_p'  actuator='right_ankle_roll_joint' user='13'/>
+        <actuatorpos name='torso_yaw_p'  actuator='torso_joint' user='13'/>
+        <actuatorpos name='left_arm_pitch_p'  actuator='left_arm_pitch_joint' user='13'/>
+        <actuatorpos name='left_arm_roll_p'  actuator='left_arm_roll_joint' user='13'/>
+        <actuatorpos name='left_arm_yaw_p'  actuator='left_arm_yaw_joint' user='13'/>
+        <actuatorpos name='left_elbow_pitch_p'  actuator='left_elbow_pitch_joint' user='13'/>
+        <actuatorpos name='left_elbow_yaw_p'  actuator='left_elbow_yaw_joint' user='13'/>
+        <actuatorpos name='right_arm_pitch_p'  actuator='right_arm_pitch_joint' user='13'/>
+        <actuatorpos name='right_arm_roll_p'  actuator='right_arm_roll_joint' user='13'/>
+        <actuatorpos name='right_arm_yaw_p'  actuator='right_arm_yaw_joint' user='13'/>
+        <actuatorpos name='right_elbow_pitch_p'  actuator='right_elbow_pitch_joint' user='13'/>
+        <actuatorpos name='right_elbow_yaw_p'  actuator='right_elbow_yaw_joint' user='13'/>
 
-        <actuatorvel name='left_thigh_yaw_v'  actuator='left_thigh_yaw' user='13'/>
-        <actuatorvel name='left_thigh_roll_v'  actuator='left_thigh_roll' user='13'/>
-        <actuatorvel name='left_thigh_pitch_v'  actuator='left_thigh_pitch' user='13'/>
-        <actuatorvel name='left_knee_v'  actuator='left_knee' user='13'/>
-        <actuatorvel name='left_ankle_pitch_v'  actuator='left_ankle_pitch' user='13'/>
-        <actuatorvel name='left_ankle_roll_v'  actuator='left_ankle_roll' user='13'/>
-        <actuatorvel name='right_thigh_yaw_v'  actuator='right_thigh_yaw' user='13'/>
-        <actuatorvel name='right_thigh_roll_v'  actuator='right_thigh_roll' user='13'/>
-        <actuatorvel name='right_thigh_pitch_v'  actuator='right_thigh_pitch' user='13'/>
-        <actuatorvel name='right_knee_v'  actuator='right_knee' user='13'/>
-        <actuatorvel name='right_ankle_pitch_v'  actuator='right_ankle_pitch' user='13'/>
-        <actuatorvel name='right_ankle_roll_v'  actuator='right_ankle_roll' user='13'/>
-        <actuatorvel name='torso_yaw_v'  actuator='torso_yaw' user='13'/>
-        <actuatorvel name='left_arm_pitch_v'  actuator='left_arm_pitch' user='13'/>
-        <actuatorvel name='left_arm_roll_v'  actuator='left_arm_roll' user='13'/>
-        <actuatorvel name='left_arm_yaw_v'  actuator='left_arm_yaw' user='13'/>
-        <actuatorvel name='left_elbow_pitch_v'  actuator='left_elbow_pitch' user='13'/>
-        <actuatorvel name='left_elbow_yaw_v'  actuator='left_elbow_yaw' user='13'/>
-        <actuatorvel name='right_arm_pitch_v'  actuator='right_arm_pitch' user='13'/>
-        <actuatorvel name='right_arm_roll_v'  actuator='right_arm_roll' user='13'/>
-        <actuatorvel name='right_arm_yaw_v'  actuator='right_arm_yaw' user='13'/>
-        <actuatorvel name='right_elbow_pitch_v'  actuator='right_elbow_pitch' user='13'/>
-        <actuatorvel name='right_elbow_yaw_v'  actuator='right_elbow_yaw' user='13'/>
+        <actuatorvel name='left_thigh_yaw_v'  actuator='left_thigh_yaw_joint' user='13'/>
+        <actuatorvel name='left_thigh_roll_v'  actuator='left_thigh_roll_joint' user='13'/>
+        <actuatorvel name='left_thigh_pitch_v'  actuator='left_thigh_pitch_joint' user='13'/>
+        <actuatorvel name='left_knee_v'  actuator='left_knee_joint' user='13'/>
+        <actuatorvel name='left_ankle_pitch_v'  actuator='left_ankle_pitch_joint' user='13'/>
+        <actuatorvel name='left_ankle_roll_v'  actuator='left_ankle_roll_joint' user='13'/>
+        <actuatorvel name='right_thigh_yaw_v'  actuator='right_thigh_yaw_joint' user='13'/>
+        <actuatorvel name='right_thigh_roll_v'  actuator='right_thigh_roll_joint' user='13'/>
+        <actuatorvel name='right_thigh_pitch_v'  actuator='right_thigh_pitch_joint' user='13'/>
+        <actuatorvel name='right_knee_v'  actuator='right_knee_joint' user='13'/>
+        <actuatorvel name='right_ankle_pitch_v'  actuator='right_ankle_pitch_joint' user='13'/>
+        <actuatorvel name='right_ankle_roll_v'  actuator='right_ankle_roll_joint' user='13'/>
+        <actuatorvel name='torso_yaw_v'  actuator='torso_joint' user='13'/>
+        <actuatorvel name='left_arm_pitch_v'  actuator='left_arm_pitch_joint' user='13'/>
+        <actuatorvel name='left_arm_roll_v'  actuator='left_arm_roll_joint' user='13'/>
+        <actuatorvel name='left_arm_yaw_v'  actuator='left_arm_yaw_joint' user='13'/>
+        <actuatorvel name='left_elbow_pitch_v'  actuator='left_elbow_pitch_joint' user='13'/>
+        <actuatorvel name='left_elbow_yaw_v'  actuator='left_elbow_yaw_joint' user='13'/>
+        <actuatorvel name='right_arm_pitch_v'  actuator='right_arm_pitch_joint' user='13'/>
+        <actuatorvel name='right_arm_roll_v'  actuator='right_arm_roll_joint' user='13'/>
+        <actuatorvel name='right_arm_yaw_v'  actuator='right_arm_yaw_joint' user='13'/>
+        <actuatorvel name='right_elbow_pitch_v'  actuator='right_elbow_pitch_joint' user='13'/>
+        <actuatorvel name='right_elbow_yaw_v'  actuator='right_elbow_yaw_joint' user='13'/>
 
-        <actuatorfrc name='left_thigh_yaw_f'  actuator='left_thigh_yaw' user='13' noise='1e-3'/>
-        <actuatorfrc name='left_thigh_roll_f'  actuator='left_thigh_roll' user='13' noise='1e-3'/>
-        <actuatorfrc name='left_thigh_pitch_f'  actuator='left_thigh_pitch' user='13' noise='1e-3'/>
-        <actuatorfrc name='left_knee_f'  actuator='left_knee' user='13' noise='1e-3'/>
-        <actuatorfrc name='left_ankle_pitch_f'  actuator='left_ankle_pitch' user='13' noise='1e-3'/>
-        <actuatorfrc name='left_ankle_roll_f'  actuator='left_ankle_roll' user='13' noise='1e-3'/>
-        <actuatorfrc name='right_thigh_yaw_f'  actuator='right_thigh_yaw' user='13' noise='1e-3'/>
-        <actuatorfrc name='right_thigh_roll_f'  actuator='right_thigh_roll' user='13' noise='1e-3'/>
-        <actuatorfrc name='right_thigh_pitch_f'  actuator='right_thigh_pitch' user='13' noise='1e-3'/>
-        <actuatorfrc name='right_knee_f'  actuator='right_knee' user='13' noise='1e-3'/>
-        <actuatorfrc name='right_ankle_pitch_f'  actuator='right_ankle_pitch' user='13' noise='1e-3'/>
-        <actuatorfrc name='right_ankle_roll_f'  actuator='right_ankle_roll' user='13' noise='1e-3'/>
-        <actuatorfrc name='torso_yaw_f'  actuator='torso_yaw' user='13' noise='1e-3'/>
-        <actuatorfrc name='left_arm_pitch_f'  actuator='left_arm_pitch' user='13' noise='1e-3'/>
-        <actuatorfrc name='left_arm_roll_f'  actuator='left_arm_roll' user='13' noise='1e-3'/>
-        <actuatorfrc name='left_arm_yaw_f'  actuator='left_arm_yaw' user='13' noise='1e-3'/>
-        <actuatorfrc name='left_elbow_pitch_f'  actuator='left_elbow_pitch' user='13' noise='1e-3'/>
-        <actuatorfrc name='left_elbow_yaw_f'  actuator='left_elbow_yaw' user='13' noise='1e-3'/>
-        <actuatorfrc name='right_arm_pitch_f'  actuator='right_arm_pitch' user='13' noise='1e-3'/>
-        <actuatorfrc name='right_arm_roll_f'  actuator='right_arm_roll' user='13' noise='1e-3'/>
-        <actuatorfrc name='right_arm_yaw_f'  actuator='right_arm_yaw' user='13' noise='1e-3'/>
-        <actuatorfrc name='right_elbow_pitch_f'  actuator='right_elbow_pitch' user='13' noise='1e-3'/>
-        <actuatorfrc name='right_elbow_yaw_f'  actuator='right_elbow_yaw' user='13' noise='1e-3'/>
+        <actuatorfrc name='left_thigh_yaw_f'  actuator='left_thigh_yaw_joint' user='13' noise='1e-3'/>
+        <actuatorfrc name='left_thigh_roll_f'  actuator='left_thigh_roll_joint' user='13' noise='1e-3'/>
+        <actuatorfrc name='left_thigh_pitch_f'  actuator='left_thigh_pitch_joint' user='13' noise='1e-3'/>
+        <actuatorfrc name='left_knee_f'  actuator='left_knee_joint' user='13' noise='1e-3'/>
+        <actuatorfrc name='left_ankle_pitch_f'  actuator='left_ankle_pitch_joint' user='13' noise='1e-3'/>
+        <actuatorfrc name='left_ankle_roll_f'  actuator='left_ankle_roll_joint' user='13' noise='1e-3'/>
+        <actuatorfrc name='right_thigh_yaw_f'  actuator='right_thigh_yaw_joint' user='13' noise='1e-3'/>
+        <actuatorfrc name='right_thigh_roll_f'  actuator='right_thigh_roll_joint' user='13' noise='1e-3'/>
+        <actuatorfrc name='right_thigh_pitch_f'  actuator='right_thigh_pitch_joint' user='13' noise='1e-3'/>
+        <actuatorfrc name='right_knee_f'  actuator='right_knee_joint' user='13' noise='1e-3'/>
+        <actuatorfrc name='right_ankle_pitch_f'  actuator='right_ankle_pitch_joint' user='13' noise='1e-3'/>
+        <actuatorfrc name='right_ankle_roll_f'  actuator='right_ankle_roll_joint' user='13' noise='1e-3'/>
+        <actuatorfrc name='torso_yaw_f'  actuator='torso_joint' user='13' noise='1e-3'/>
+        <actuatorfrc name='left_arm_pitch_f'  actuator='left_arm_pitch_joint' user='13' noise='1e-3'/>
+        <actuatorfrc name='left_arm_roll_f'  actuator='left_arm_roll_joint' user='13' noise='1e-3'/>
+        <actuatorfrc name='left_arm_yaw_f'  actuator='left_arm_yaw_joint' user='13' noise='1e-3'/>
+        <actuatorfrc name='left_elbow_pitch_f'  actuator='left_elbow_pitch_joint' user='13' noise='1e-3'/>
+        <actuatorfrc name='left_elbow_yaw_f'  actuator='left_elbow_yaw_joint' user='13' noise='1e-3'/>
+        <actuatorfrc name='right_arm_pitch_f'  actuator='right_arm_pitch_joint' user='13' noise='1e-3'/>
+        <actuatorfrc name='right_arm_roll_f'  actuator='right_arm_roll_joint' user='13' noise='1e-3'/>
+        <actuatorfrc name='right_arm_yaw_f'  actuator='right_arm_yaw_joint' user='13' noise='1e-3'/>
+        <actuatorfrc name='right_elbow_pitch_f'  actuator='right_elbow_pitch_joint' user='13' noise='1e-3'/>
+        <actuatorfrc name='right_elbow_yaw_f'  actuator='right_elbow_yaw_joint' user='13' noise='1e-3'/>
 
 
         <framequat     name='orientation' objtype='site' noise='0.001' objname='imu'/>
