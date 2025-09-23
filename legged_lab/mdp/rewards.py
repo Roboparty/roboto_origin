@@ -103,12 +103,10 @@ def is_terminated(env: BaseEnv) -> torch.Tensor:
 def feet_air_time_positive_biped(env: BaseEnv, threshold: float, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
     air_time = contact_sensor.data.current_air_time[:, sensor_cfg.body_ids]
-    contact_time = contact_sensor.data.current_contact_time[:, sensor_cfg.body_ids]
-    in_contact = contact_time > 0.0
-    in_mode_time = torch.where(in_contact, contact_time, air_time)
-    single_stance = torch.sum(in_contact.int(), dim=1) == 1
-    reward = torch.min(torch.where(single_stance.unsqueeze(-1), in_mode_time, 0.0), dim=1)[0]
-    reward = torch.clamp(reward, max=threshold)
+    is_contact = contact_sensor.data.net_forces_w_history[:, :, sensor_cfg.body_ids, :].norm(dim=-1).max(dim=1)[0] > 1.0
+    single_stance = torch.sum(is_contact.int(), dim=1) == 1
+    reward = torch.sum(torch.where(torch.logical_and(~is_contact, single_stance.unsqueeze(-1)), air_time, 0.0), dim=1)
+    reward = torch.clamp(reward, min=0.0, max=threshold)
     # no reward for zero command
     reward *= (
         torch.norm(env.command_generator.command[:, :2], dim=1) + torch.abs(env.command_generator.command[:, 2])
@@ -128,23 +126,28 @@ def feet_slide(
     return reward
 
 
-def body_force_z(
+def body_force(
     env: BaseEnv, sensor_cfg: SceneEntityCfg, threshold: float = 500, max_reward: float = 400
 ) -> torch.Tensor:
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
-    reward = torch.sum(torch.abs(contact_sensor.data.net_forces_w[:, sensor_cfg.body_ids, 2]), dim=1)
-    reward[reward < threshold] = 0
-    reward[reward > threshold] -= threshold
-    reward = reward.clamp(min=0, max=max_reward)
+    reward = torch.sum(torch.linalg.norm(contact_sensor.data.net_forces_w[:, sensor_cfg.body_ids, :], dim=2), dim=1)
+    reward = (reward - threshold).clamp(min=0.0, max=max_reward)
     return reward
 
 
 def body_orientation_l2(env: BaseEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
     asset: Articulation = env.scene[asset_cfg.name]    
-    body_orientation = math_utils.quat_apply_inverse(
-        asset.data.body_quat_w[:, asset_cfg.body_ids, :], asset.data.GRAVITY_VEC_W
+    body_orientation = torch.stack(
+        [
+            math_utils.quat_apply_inverse(
+                asset.data.body_quat_w[:, body_id, :], asset.data.GRAVITY_VEC_W
+            )
+            for body_id in asset_cfg.body_ids
+            if body_id is not None
+        ],
+        dim=-1,
     )
-    return torch.sum(torch.square(body_orientation[:, :2]), dim=1)
+    return torch.sum(torch.sum(torch.square(body_orientation[:, :2, :]), dim=1), dim=-1)
 
 
 def feet_stumble(env: BaseEnv, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
