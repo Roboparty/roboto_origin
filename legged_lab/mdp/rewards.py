@@ -215,8 +215,6 @@ def stand_still(
     pos_reward = pos_weight * torch.sum(torch.abs
         (asset.data.joint_pos[:, pos_cfg.joint_ids] - asset.data.default_joint_pos[:, pos_cfg.joint_ids]), dim=1
     )
-    if env.cfg.interrupt.use_interrupt:
-        pos_reward *= ~env.interrupt_mask
     vel_reward = vel_weight * torch.sum(torch.abs(asset.data.joint_vel[:, vel_cfg.joint_ids]), dim=1)
     reward = torch.where(
         torch.logical_or(cmd > 0.01, body_vel > 0.5),
@@ -269,4 +267,37 @@ def joint_deviation_interrupt(env: BaseEnv, asset_cfg1: SceneEntityCfg, asset_cf
     angle2 = asset2.data.joint_pos[:, asset_cfg2.joint_ids] - asset2.data.default_joint_pos[:, asset_cfg2.joint_ids]
     reward = weight1 * torch.sum(torch.abs(angle1), dim=1) + weight2 * torch.sum(torch.abs(angle2), dim=1)
     reward *= ~env.interrupt_mask
+    return reward
+
+def stand_still_interrupt(
+    env: BaseEnv,
+    pos_cfg: SceneEntityCfg,
+    vel_cfg: SceneEntityCfg,
+    interrupt_cfg: SceneEntityCfg,
+    pos_weight: float = 1.0,
+    vel_weight: float = 1.0,
+) -> torch.Tensor:
+    """Penalize joint position error from default on the articulation."""
+    # extract the used quantities (to enable type-hinting)
+    asset: Articulation = env.scene["robot"]
+    cmd = (
+        torch.norm(env.command_generator.command[:, :2], dim=1) + torch.abs(env.command_generator.command[:, 2])
+    )
+    body_lin_vel = torch.linalg.norm(asset.data.root_lin_vel_b[:, :2], dim=1)
+    body_ang_vel = torch.abs(asset.data.root_ang_vel_b[:, 2])
+    body_vel = body_ang_vel + body_lin_vel
+    pos_joint_ids = list(set(pos_cfg.joint_ids) - set(interrupt_cfg.joint_ids))
+    vel_joint_ids = list(set(vel_cfg.joint_ids) - set(interrupt_cfg.joint_ids))
+    pos_reward = torch.where(env.interrupt_mask, 
+                             pos_weight * torch.sum(torch.abs(asset.data.joint_pos[:, pos_joint_ids] - asset.data.default_joint_pos[:, pos_joint_ids]), dim=1), 
+                             pos_weight * torch.sum(torch.abs(asset.data.joint_pos[:, pos_cfg.joint_ids] - asset.data.default_joint_pos[:, pos_cfg.joint_ids]), dim=1))
+    vel_reward = torch.where(env.interrupt_mask, 
+                             vel_weight * torch.sum(torch.abs(asset.data.joint_vel[:, vel_joint_ids]), dim=1), 
+                             vel_weight * torch.sum(torch.abs(asset.data.joint_vel[:, vel_cfg.joint_ids]), dim=1))
+    reward = torch.where(
+        torch.logical_or(cmd > 0.01, body_vel > 0.5),
+        0.0,
+        pos_reward + vel_reward,
+    )
+    reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
     return reward
