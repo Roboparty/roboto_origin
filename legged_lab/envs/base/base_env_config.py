@@ -44,6 +44,8 @@ from .base_config import (
     InterruptCfg,
 )
 
+from isaaclab.markers import VisualizationMarkersCfg
+import isaaclab.sim as sim_utils
 
 @configclass
 class BaseEnvCfg:
@@ -240,6 +242,20 @@ class BaseEnvCfg:
         ],
         interrupt_init_range = 0.2,
         interrupt_update_step = 30,
+        switch_prob = 0.005,
+    )
+    interrupt_vis_cfg = VisualizationMarkersCfg(
+        markers={
+            "interrupt": sim_utils.SphereCfg(
+                radius=0.1,
+                visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 1.0, 1.0)),
+            ),
+            "no_interrupt": sim_utils.SphereCfg(
+                radius=0.1,
+                visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(1.0, 0.0, 0.0)),
+            ),
+        },
+        prim_path="/Visuals/Command/interrupt",
     )
 
     def __post_init__(self):

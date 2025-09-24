@@ -22,6 +22,7 @@ from isaaclab.sensors import ContactSensor, RayCaster
 from isaaclab.sim import PhysxCfg, SimulationContext
 from isaaclab.utils.buffers import CircularBuffer, DelayBuffer
 from rsl_rl.env import VecEnv
+from isaaclab.markers import VisualizationMarkers
 
 from legged_lab.envs.base.base_env_config import BaseEnvCfg
 from legged_lab.utils.env_utils.scene import SceneCfg
@@ -140,6 +141,8 @@ class BaseEnv(VecEnv):
             self.interrupt_scale = torch.tensor(self.cfg.interrupt.interrupt_scale, dtype=torch.float, device=self.device, requires_grad=False).unsqueeze(0)
             self.interrupt_lower_bound = torch.tensor(self.cfg.interrupt.interrupt_lower_bound, dtype=torch.float, device=self.device, requires_grad=False).unsqueeze(0)
             self.interrupt_rad_curriculum = torch.zeros(self.num_envs, dtype=torch.float, device=self.device, requires_grad=False)
+            self.interrupt_vis = VisualizationMarkers(self.cfg.interrupt_vis_cfg)
+            self.interrupt_vis.set_visibility(True)
         self.init_obs_buffer()
 
     def compute_current_observations(self):
@@ -294,6 +297,12 @@ class BaseEnv(VecEnv):
             if self.num_steps % self.cfg.interrupt.interrupt_update_step == 0:
                 self.interrupt_actions = self.uniform_interrupt_resample() / self.cfg.robot.action_scale
                 self.num_steps %= self.cfg.interrupt.interrupt_update_step
+            self.random_switch_interrupt() 
+            if not self.headless:
+                robot_positions = self.robot.data.root_pos_w
+                marker_positions = robot_positions + torch.tensor([0.0, 0.0, 0.8], device=self.device)
+                interrupt_list = (~self.interrupt_mask).int().cpu().numpy().tolist()
+                self.interrupt_vis.visualize(marker_indices=interrupt_list, translations=marker_positions)
 
         if not self.headless:
             self.sim.render()
@@ -444,3 +453,8 @@ class BaseEnv(VecEnv):
             (self.cfg.interrupt.interrupt_init_range * self.interrupt_rad_curriculum.unsqueeze(-1) + noise_mean)/self.cfg.robot.action_scale
         )
         return interrupt_actions
+    
+    def random_switch_interrupt(self):
+        switch_rand = torch.rand(self.num_envs, device=self.device)
+        switch = switch_rand < self.cfg.interrupt.switch_prob
+        self.interrupt_mask = torch.where(torch.logical_and(switch, self.interrupt_mode_mask), ~self.interrupt_mask, self.interrupt_mask)

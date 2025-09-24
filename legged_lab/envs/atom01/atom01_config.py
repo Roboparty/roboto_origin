@@ -141,7 +141,7 @@ class ATOM01RewardCfg(RewardCfg):
     upward = RewTerm(func=mdp.upward, weight=0.4)
     stand_still = RewTerm(func=mdp.stand_still, weight=-0.3, params={"pos_cfg": SceneEntityCfg("robot", joint_names=[".*_arm.*", ".*_elbow.*", ".*torso.*", ".*_thigh.*", ".*_knee.*", ".*_ankle.*"]),
                                                                      "vel_cfg": SceneEntityCfg("robot", joint_names=[".*_arm.*", ".*_elbow.*", ".*torso.*", ".*_thigh.*", ".*_knee.*", ".*_ankle.*"]), 
-                                                                     "pos_weight": 1.0, "vel_weight": 0.015})
+                                                                     "pos_weight": 1.0, "vel_weight": 0.04})
     feet_height = RewTerm(
         func=mdp.feet_height,
         weight=0.15,
@@ -267,7 +267,7 @@ class ATOM01FlatEnvCfg(BaseEnvCfg):
         self.scene.terrain_type = "generator"
         self.scene.terrain_generator = GRAVEL_TERRAINS_CFG
         self.scene.height_scanner.enable_height_scan = True
-        self.robot.terminate_contacts_body_names = ["torso_link", "base_link", ".*_elbow_pitch.*", ".*_elbow_yaw.*"]
+        self.robot.terminate_contacts_body_names = ["torso_link"]
         self.robot.feet_body_names = [".*ankle_roll.*"]
         self.domain_rand.events.add_base_mass.params["asset_cfg"].body_names = ["torso_link", "base_link"]
         self.domain_rand.events.randomize_rigid_body_com.params["asset_cfg"].body_names = ["torso_link", "base_link"]

@@ -17,6 +17,8 @@ from isaaclab.managers import EventTermCfg as EventTerm
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.terrains.terrain_generator_cfg import TerrainGeneratorCfg
 from isaaclab.utils import configclass
+from isaaclab.markers import VisualizationMarkersCfg
+import isaaclab.sim as sim_utils
 
 import legged_lab.mdp as mdp
 
@@ -238,3 +240,17 @@ class InterruptCfg:
     interrupt_lower_bound: list = []
     interrupt_init_range: float = 0.2
     interrupt_update_step: int = 30
+    switch_prob: float = 0.005
+    interrupt_vis_cfg: VisualizationMarkersCfg = VisualizationMarkersCfg(
+        markers={
+            "interrupt": sim_utils.SphereCfg(
+                radius=0.1,
+                visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 1.0, 0.0)),
+            ),
+            "no_interrupt": sim_utils.SphereCfg(
+                radius=0.1,
+                visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(1.0, 0.0, 0.0)),
+            ),
+        },
+        prim_path="/Visuals/Command/interrupt",
+    )

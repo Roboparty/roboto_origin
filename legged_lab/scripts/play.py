@@ -96,6 +96,11 @@ def play():
     env_class = task_registry.get_task_class(env_class_name)
     env = env_class(env_cfg, args_cli.headless)
 
+    if env_cfg.interrupt.use_interrupt:
+        env_cfg.interrupt.interrupt_ratio = 1.0
+        env_cfg.interrupt.switch_prob = 0.02
+        env.interrupt_rad_curriculum = torch.ones(env_cfg.scene.num_envs, dtype=torch.float, device=env_cfg.device, requires_grad=False)
+
     log_root_path = os.path.join("logs", agent_cfg.experiment_name)
     log_root_path = os.path.abspath(log_root_path)
     print(f"[INFO] Loading experiment from directory: {log_root_path}")
