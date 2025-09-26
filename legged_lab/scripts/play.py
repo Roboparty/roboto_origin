@@ -14,7 +14,7 @@ import os
 
 import torch
 from isaaclab.app import AppLauncher
-from rsl_rl.runners import OnPolicyRunner
+from rsl_rl.runners import AmpOnPolicyRunner, OnPolicyRunner
 
 from legged_lab.utils import task_registry
 
@@ -96,9 +96,8 @@ def play():
     env_class = task_registry.get_task_class(env_class_name)
     env = env_class(env_cfg, args_cli.headless)
 
-    if env_cfg.interrupt.use_interrupt:
+    if hasattr(env_cfg, 'interrupt') and env_cfg.interrupt.use_interrupt:
         env_cfg.interrupt.interrupt_ratio = 1.0
-        env_cfg.interrupt.switch_prob = 0.02
         env.interrupt_rad_curriculum = torch.ones(env_cfg.scene.num_envs, dtype=torch.float, device=env_cfg.device, requires_grad=False)
 
     log_root_path = os.path.join("logs", agent_cfg.experiment_name)
@@ -107,7 +106,8 @@ def play():
     resume_path = get_checkpoint_path(log_root_path, agent_cfg.load_run, agent_cfg.load_checkpoint)
     log_dir = os.path.dirname(resume_path)
 
-    runner = OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
+    runner_class: OnPolicyRunner | AmpOnPolicyRunner = eval(agent_cfg.runner_class_name)
+    runner = runner_class(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
     runner.load(resume_path, load_optimizer=False)
 
     policy = runner.get_inference_policy(device=env.device)
