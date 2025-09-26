@@ -9,6 +9,8 @@
 # This file contains code derived from Isaac Lab Project (BSD-3-Clause license)
 # with modifications by Legged Lab Project (BSD-3-Clause license).
 
+from isaaclab.markers import VisualizationMarkersCfg
+import isaaclab.sim as sim_utils
 from isaaclab.managers import RewardTermCfg as RewTerm
 from isaaclab.managers.scene_entity_cfg import SceneEntityCfg
 from isaaclab.utils import configclass
@@ -24,7 +26,7 @@ import numpy as np
 
 import legged_lab.mdp as mdp
 from legged_lab.assets.roboparty import ATOM01_CFG
-from legged_lab.envs.base.base_env_config import (  # noqa:F401
+from legged_lab.envs.base.base_config import (  # noqa:F401
     BaseAgentCfg,
     BaseEnvCfg,
     BaseSceneCfg,
@@ -282,43 +284,121 @@ class ATOM01InterruptEnvCfg(BaseEnvCfg):
         self.domain_rand.events.scale_actuator_gains.params["asset_cfg"].joint_names = [".*_joint"]
         self.domain_rand.events.scale_joint_parameters.params["asset_cfg"].joint_names = [".*_joint"]
         self.robot.action_scale = 0.25
-        self.interrupt.use_interrupt = True
         self.domain_rand.action_delay.params["max_delay"] = 5
         self.noise.noise_scales.ang_vel = 0.35
         self.noise.noise_scales.joint_vel = 1.75
         self.noise.noise_scales.joint_pos = 0.03
 
+        self.interrupt: InterruptCfg = InterruptCfg(
+        use_interrupt = True,
+        max_curriculum = 1.0,
+        interrupt_ratio = 0.5,
+        interrupt_joint_names = [
+            "left_arm_pitch_joint",
+            "left_arm_roll_joint",
+            "left_arm_yaw_joint",
+            "left_elbow_pitch_joint",
+            "right_arm_pitch_joint",
+            "right_arm_roll_joint",
+            "right_arm_yaw_joint",
+            "right_elbow_pitch_joint",
+        ],
+    interrupt_scale = [
+            3.14, # Arm Pitch -1.57~1.57
+            1.25, # Arm Roll, -0.25~1.0
+            3.14, # Arm Yaw,  -1.57~1.57
+            2.07, # Elbow Pitch, -0.5~1.57
+            3.14, # Arm Pitch -1.57~1.57
+            1.25, # Arm Roll, -1.0~0.25
+            3.14, # Arm Yaw,  -1.57~1.57
+            2.07, # Elbow Pitch, -0.5~1.57
+        ], # Uniform Distribution Noise for each joint.
+    interrupt_lower_bound = [
+            -1.57,
+            -0.25, 
+            -1.57, 
+            -0.5, 
+            -1.57, 
+            -1.0, 
+            -1.57,
+            -0.5,
+        ],
+        interrupt_init_range = 0.2,
+        interrupt_update_step = 30,
+        switch_prob = 0.005,
+    )
+    interrupt_vis_cfg = VisualizationMarkersCfg(
+        markers={
+            "interrupt": sim_utils.SphereCfg(
+                radius=0.1,
+                visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 1.0, 0.0)),
+            ),
+            "no_interrupt": sim_utils.SphereCfg(
+                radius=0.1,
+                visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(1.0, 0.0, 0.0)),
+            ),
+        },
+        prim_path="/Visuals/Command/interrupt",
+    )
+
 
 @configclass
 class ATOM01InterruptAgentCfg(BaseAgentCfg):
-    experiment_name: str = "atom01_interrupt"
-    wandb_project: str = "atom01_interrupt"
-    seed = 42
-    num_steps_per_env = 24
-    max_iterations = 9001
-    save_interval = 1000
-    empirical_normalization = True
-    algorithm = RslRlPpoAlgorithmCfg(
-        class_name="PPO",
-        value_loss_coef=1.0,
-        use_clipped_value_loss=True,
-        clip_param=0.2,
-        entropy_coef=0.005,
-        num_learning_epochs=5,
-        num_mini_batches=4,
-        learning_rate=1.0e-3,
-        schedule="adaptive",
-        gamma=0.99,
-        lam=0.95,
-        desired_kl=0.01,
-        max_grad_norm=1.0,
-        normalize_advantage_per_mini_batch=False,
-        symmetry_cfg=RslRlSymmetryCfg(
-            use_data_augmentation=True, 
-            use_mirror_loss=True,
-            mirror_loss_coeff=0.2, 
-            data_augmentation_func=data_augmentation_func
-        ),
-        rnd_cfg=None,  # RslRlRndCfg()
+    def __post_init__(self):
+        super().__post_init__()
+        self.experiment_name: str = "atom01_interrupt"
+        self.wandb_project: str = "atom01_interrupt"
+        self.seed = 42
+        self.num_steps_per_env = 24
+        self.max_iterations = 9001
+        self.save_interval = 1000
+        self.empirical_normalization = True
+        self.algorithm = RslRlPpoAlgorithmCfg(
+            class_name="PPO",
+            value_loss_coef=1.0,
+            use_clipped_value_loss=True,
+            clip_param=0.2,
+            entropy_coef=0.005,
+            num_learning_epochs=5,
+            num_mini_batches=4,
+            learning_rate=1.0e-3,
+            schedule="adaptive",
+            gamma=0.99,
+            lam=0.95,
+            desired_kl=0.01,
+            max_grad_norm=1.0,
+            normalize_advantage_per_mini_batch=False,
+            symmetry_cfg=RslRlSymmetryCfg(
+                use_data_augmentation=True, 
+                use_mirror_loss=True,
+                mirror_loss_coeff=0.2, 
+                data_augmentation_func=data_augmentation_func
+            ),
+            rnd_cfg=None,  # RslRlRndCfg()
+        )
+        self.clip_actions = 100.0
+
+@configclass
+class InterruptCfg:
+    use_interrupt: bool = False
+    max_curriculum: float = 1.0
+    interrupt_ratio: float = 0.5
+    interrupt_joint_names: list = []
+    interrupt_scale : list = []
+    interrupt_lower_bound: list = []
+    interrupt_init_range: float = 0.2
+    interrupt_update_step: int = 30
+    switch_prob: float = 0.005
+    interrupt_vis_cfg: VisualizationMarkersCfg = VisualizationMarkersCfg(
+        markers={
+            "interrupt": sim_utils.SphereCfg(
+                radius=0.1,
+                visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 1.0, 0.0)),
+            ),
+            "no_interrupt": sim_utils.SphereCfg(
+                radius=0.1,
+                visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(1.0, 0.0, 0.0)),
+            ),
+        },
+        prim_path="/Visuals/Command/interrupt",
     )
-    clip_actions = 100.0

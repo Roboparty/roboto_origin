@@ -124,12 +124,19 @@ def run_mujoco(policy, cfg, headless=False):
     actual_ang_vel_data = [] # Store [wz] at low freq
     # -------------------------------------------------------------
     is_first_frame = True
+    is_interrupt = False
     for step in tqdm(range(int(cfg.sim_config.sim_duration / cfg.sim_config.dt)), desc="Simulating..."):
 
         # Obtain an observation
         q, dq, quat, v, omega, gvec = get_obs(data)
         q = q[-cfg.robot_config.num_actions:]
         dq = dq[-cfg.robot_config.num_actions:]
+        
+        t = step * cfg.sim_config.dt
+        if t > 1 and t < 7:
+            is_interrupt = True
+        else :
+            is_interrupt = False
 
         # 1000hz -> 100hz/50hz
         if count_lowlevel % cfg.sim_config.decimation == 0:
@@ -150,7 +157,7 @@ def run_mujoco(policy, cfg, headless=False):
             obs[0, 9:32] = q_obs
             obs[0, 32:55] = dq_obs
             obs[0, 55:78] = action
-            obs[0, 78] = True
+            obs[0, 78] = is_interrupt
 
             if is_first_frame:
                 hist_obs = np.tile(obs, (cfg.robot_config.frame_stack, 1))
@@ -166,7 +173,17 @@ def run_mujoco(policy, cfg, headless=False):
             for i in range(len(cfg.robot_config.usd2urdf)):
                 target_pos[cfg.robot_config.usd2urdf[i]] = target_q[i]
             target_pos = target_pos + cfg.robot_config.default_pos
-            target_pos[13:] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+            
+            if is_interrupt:
+                target_pos[13] = 0.18
+                target_pos[14] = 0.06
+                target_pos[15] = 0
+                target_pos[16] = 0.78
+
+                target_pos[18] = -1.0
+                target_pos[19] = 0.06
+                target_pos[20] = 0.6 * np.sin(2 * np.pi * t)
+                target_pos[21] = -0.3
 
             # --- Capture actual state at this low-frequency step ---
             # Note: q, v, omega were just computed by get_obs() for the current simulation step
@@ -320,9 +337,9 @@ if __name__ == '__main__':
             decimation = 20
 
         class robot_config:
-            kps = np.array([125, 125, 150, 150, 50, 50, 125, 125, 150, 150, 40, 40, 150, 60, 60, 60, 40, 20, 60, 60, 60, 40, 20], dtype=np.double)
-            kds = np.array([4.0, 4.0, 5.0, 5.0, 1.5, 1.5, 4.0, 4.0, 5.0, 5.0, 1.5, 1.5, 5.0, 2.0, 2.0, 2.0, 1.5, 1.0, 2.0, 2.0, 2.0, 1.5, 1.0], dtype=np.double)
-            default_pos = np.array([0, 0, -0.3, 0.6, -0.3, 0, 0, 0, -0.3, 0.6, -0.3, 0, 0, 0.12, 0.07, 0, 1., 0, 0.12, -0.07, 0, 1., 0], dtype=np.double)
+            kps = np.array([100, 100, 100, 150, 40, 40, 100, 100, 100, 150, 40, 40, 150, 40, 40, 40, 30, 20, 40, 40, 40, 30, 20], dtype=np.double)
+            kds = np.array([3.3, 3.3, 3.3, 5.0, 2.0, 2.0, 3.3, 3.3, 3.3, 5.0, 2.0, 2.0, 5.0, 2.0, 2.0, 2.0, 1.5, 1.0, 2.0, 2.0, 2.0, 1.5, 1.0], dtype=np.double)
+            default_pos = np.array([0, 0, -0.1, 0.3, -0.2, 0, 0, 0, -0.1, 0.3, -0.2, 0, 0, 0.18, 0.06, 0, 0.78, 0, 0.18, -0.06, 0, 0.78, 0], dtype=np.double)
             tau_limit = 200. * np.ones(23, dtype=np.double)
             frame_stack = 10
             num_single_obs = 79
