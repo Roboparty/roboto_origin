@@ -24,7 +24,7 @@ import numpy as np
 
 import legged_lab.mdp as mdp
 from legged_lab.assets.roboparty import ATOM01_CFG
-from legged_lab.envs.base.base_env_config import (  # noqa:F401
+from legged_lab.envs.base.base_config import (  # noqa:F401
     BaseAgentCfg,
     BaseEnvCfg,
     BaseSceneCfg,
@@ -275,7 +275,6 @@ class ATOM01FlatEnvCfg(BaseEnvCfg):
         self.domain_rand.events.scale_actuator_gains.params["asset_cfg"].joint_names = [".*_joint"]
         self.domain_rand.events.scale_joint_parameters.params["asset_cfg"].joint_names = [".*_joint"]
         self.robot.action_scale = 0.25
-        self.interrupt.use_interrupt = False
         self.domain_rand.action_delay.params["max_delay"] = 5
         self.noise.noise_scales.ang_vel = 0.35
         self.noise.noise_scales.joint_vel = 1.75
@@ -284,42 +283,43 @@ class ATOM01FlatEnvCfg(BaseEnvCfg):
 
 @configclass
 class ATOM01FlatAgentCfg(BaseAgentCfg):
-    experiment_name: str = "atom01_flat"
-    wandb_project: str = "atom01_flat"
-    seed = 42
-    num_steps_per_env = 24
-    max_iterations = 9001
-    save_interval = 1000
-    empirical_normalization = True
-    algorithm = RslRlPpoAlgorithmCfg(
-        class_name="PPO",
-        value_loss_coef=1.0,
-        use_clipped_value_loss=True,
-        clip_param=0.2,
-        entropy_coef=0.005,
-        num_learning_epochs=5,
-        num_mini_batches=4,
-        learning_rate=1.0e-3,
-        schedule="adaptive",
-        gamma=0.99,
-        lam=0.95,
-        desired_kl=0.01,
-        max_grad_norm=1.0,
-        normalize_advantage_per_mini_batch=False,
-        symmetry_cfg=RslRlSymmetryCfg(
-            use_data_augmentation=True, 
-            use_mirror_loss=True,
-            mirror_loss_coeff=0.2, 
-            data_augmentation_func=data_augmentation_func
-        ),
-        rnd_cfg=None,  # RslRlRndCfg()
-    )
-    clip_actions = 100.0
+    def __post_init__(self):
+        super().__post_init__()
+        self.experiment_name: str = "atom01_flat"
+        self.wandb_project: str = "atom01_flat"
+        self.seed = 42
+        self.num_steps_per_env = 24
+        self.max_iterations = 9001
+        self.save_interval = 1000
+        self.empirical_normalization = True
+        self.algorithm = RslRlPpoAlgorithmCfg(
+            class_name="PPO",
+            value_loss_coef=1.0,
+            use_clipped_value_loss=True,
+            clip_param=0.2,
+            entropy_coef=0.005,
+            num_learning_epochs=5,
+            num_mini_batches=4,
+            learning_rate=1.0e-3,
+            schedule="adaptive",
+            gamma=0.99,
+            lam=0.95,
+            desired_kl=0.01,
+            max_grad_norm=1.0,
+            normalize_advantage_per_mini_batch=False,
+            symmetry_cfg=RslRlSymmetryCfg(
+                use_data_augmentation=True, 
+                use_mirror_loss=True,
+                mirror_loss_coeff=0.2, 
+                data_augmentation_func=data_augmentation_func
+            ),
+            rnd_cfg=None,  # RslRlRndCfg()
+        )
+        self.clip_actions = 100.0
 
 
 @configclass
 class ATOM01RoughEnvCfg(ATOM01FlatEnvCfg):
-
     def __post_init__(self):
         super().__post_init__()
         self.scene.height_scanner.enable_height_scan = True
@@ -331,8 +331,7 @@ class ATOM01RoughEnvCfg(ATOM01FlatEnvCfg):
 
 @configclass
 class ATOM01RoughAgentCfg(ATOM01FlatAgentCfg):
-    experiment_name: str = "atom01_rough"
-    wandb_project: str = "atom01_rough"
-
     def __post_init__(self):
         super().__post_init__()
+        self.experiment_name: str = "atom01_rough"
+        self.wandb_project: str = "atom01_rough"
