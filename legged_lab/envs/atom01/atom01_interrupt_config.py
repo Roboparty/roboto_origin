@@ -284,7 +284,7 @@ class ATOM01InterruptEnvCfg(BaseEnvCfg):
         self.domain_rand.events.scale_actuator_gains.params["asset_cfg"].joint_names = [".*_joint"]
         self.domain_rand.events.scale_joint_parameters.params["asset_cfg"].joint_names = [".*_joint"]
         self.robot.action_scale = 0.25
-        self.domain_rand.action_delay.params["max_delay"] = 5
+        self.domain_rand.action_delay.params["max_delay"] = 4
         self.noise.noise_scales.ang_vel = 0.35
         self.noise.noise_scales.joint_vel = 1.75
         self.noise.noise_scales.joint_pos = 0.03

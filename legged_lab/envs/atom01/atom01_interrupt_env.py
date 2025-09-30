@@ -1,5 +1,6 @@
 from isaaclab.markers import VisualizationMarkers
 from isaaclab.managers.scene_entity_cfg import SceneEntityCfg
+from isaaclab.utils.buffers import CircularBuffer, DelayBuffer
 import torch
 import numpy as np
 
@@ -15,7 +16,48 @@ class ATOM01InterruptEnv(BaseEnv):
         self.cfg: ATOM01InterruptEnvCfg
 
     def init_buffers(self):
-        super().init_buffers()
+        self.extras = {}
+
+        self.max_episode_length_s = self.cfg.scene.max_episode_length_s
+        self.max_episode_length = np.ceil(self.max_episode_length_s / self.step_dt)
+        self.num_actions = self.robot.data.default_joint_pos.shape[1]
+        self.clip_actions = self.cfg.normalization.clip_actions
+        self.clip_obs = self.cfg.normalization.clip_observations
+
+        self.action_scale = self.cfg.robot.action_scale
+        self.action_buffer = DelayBuffer(
+            self.cfg.domain_rand.action_delay.params["max_delay"], self.num_envs, device=self.device
+        )
+        self.action_buffer.compute(
+            torch.zeros(self.num_envs, self.num_actions, dtype=torch.float, device=self.device, requires_grad=False)
+        )
+        if self.cfg.domain_rand.action_delay.enable:
+            time_lags = torch.randint(
+                low=self.cfg.domain_rand.action_delay.params["min_delay"],
+                high=self.cfg.domain_rand.action_delay.params["max_delay"] + 1,
+                size=(self.num_envs,),
+                dtype=torch.int,
+                device=self.device,
+            )
+            self.action_buffer.set_time_lag(time_lags, torch.arange(self.num_envs, device=self.device))
+
+        self.robot_cfg = SceneEntityCfg(name="robot")
+        self.robot_cfg.resolve(self.scene)
+        self.termination_contact_cfg = SceneEntityCfg(
+            name="contact_sensor", body_names=self.cfg.robot.terminate_contacts_body_names
+        )
+        self.termination_contact_cfg.resolve(self.scene)
+        self.feet_cfg = SceneEntityCfg(name="contact_sensor", body_names=self.cfg.robot.feet_body_names)
+        self.feet_cfg.resolve(self.scene)
+
+        self.obs_scales = self.cfg.normalization.obs_scales
+        self.add_noise = self.cfg.noise.add_noise
+
+        self.episode_length_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.long)
+        self.sim_step_counter = 0
+        self.reset_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.bool)
+        self.time_out_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.bool)
+
         if self.cfg.interrupt.use_interrupt:
             self.num_steps = 0
             self.interrupt_joint_cfg = SceneEntityCfg(name="robot", joint_names=self.cfg.interrupt.interrupt_joint_names, preserve_order=True)
@@ -32,6 +74,8 @@ class ATOM01InterruptEnv(BaseEnv):
             self.interrupt_rad_curriculum = torch.zeros(self.num_envs, dtype=torch.float, device=self.device, requires_grad=False)
             self.interrupt_vis = VisualizationMarkers(self.cfg.interrupt_vis_cfg)
             self.interrupt_vis.set_visibility(True)
+        
+        self.init_obs_buffer()
 
     def compute_current_observations(self):
         robot = self.robot
