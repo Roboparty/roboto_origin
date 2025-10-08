@@ -71,10 +71,6 @@ class ATOM01AmpEnv(BaseEnv):
                 ],
                 preserve_order=True,
             )
-            self.ankle_joint_ids, _ = self.robot.find_joints(
-                name_keys=["left_ankle_pitch_joint", "right_ankle_pitch_joint", "left_ankle_roll_joint", "right_ankle_roll_joint"],
-                preserve_order=True,
-            )
 
 
     def visualize_motion(self, time):
