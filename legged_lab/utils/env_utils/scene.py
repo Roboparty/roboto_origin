@@ -75,7 +75,7 @@ class SceneCfg(InteractiveSceneCfg):
         self.left_feet_scanner = RayCasterCfg(
             prim_path="{ENV_REGEX_NS}/Robot/left_ankle_roll_link",
             offset=RayCasterCfg.OffsetCfg(pos=(0.02, 0.0, 20.0)),
-            attach_yaw_only=True,
+            ray_alignment='yaw',
             pattern_cfg=patterns.GridPatternCfg(resolution=0.02, size=[0.12, 0.04]),
             debug_vis=True,
             mesh_prim_paths=["/World/ground"],
@@ -83,7 +83,7 @@ class SceneCfg(InteractiveSceneCfg):
         self.right_feet_scanner = RayCasterCfg(
             prim_path="{ENV_REGEX_NS}/Robot/right_ankle_roll_link",
             offset=RayCasterCfg.OffsetCfg(pos=(0.02, 0.0, 20.0)),
-            attach_yaw_only=True,
+            ray_alignment='yaw',
             pattern_cfg=patterns.GridPatternCfg(resolution=0.02, size=[0.12, 0.04]),
             debug_vis=True,
             mesh_prim_paths=["/World/ground"],
@@ -93,7 +93,7 @@ class SceneCfg(InteractiveSceneCfg):
             self.height_scanner = RayCasterCfg(
                 prim_path="{ENV_REGEX_NS}/Robot/" + config.height_scanner.prim_body_name,
                 offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 20.0)),
-                attach_yaw_only=True,
+                ray_alignment='yaw',
                 pattern_cfg=patterns.GridPatternCfg(
                     resolution=config.height_scanner.resolution, size=config.height_scanner.size
                 ),

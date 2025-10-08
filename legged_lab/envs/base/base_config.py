@@ -143,7 +143,7 @@ class EventCfg:
         },
     )
     randomize_rigid_body_com = EventTerm(
-        func=mdp.randomize_base_body_com,
+        func=mdp.randomize_rigid_body_com,
         mode="startup",
         params={
             "asset_cfg": SceneEntityCfg("robot", body_names=MISSING),
@@ -166,8 +166,8 @@ class EventCfg:
         mode="startup",
         params={
             "asset_cfg": SceneEntityCfg("robot", joint_names=MISSING),
-            "stiffness_distribution_params": (0.9, 1.1),
-            "damping_distribution_params": (0.9, 1.1),
+            "stiffness_distribution_params": (0.85, 1.15),
+            "damping_distribution_params": (0.85, 1.15),
             "operation": "scale",
         },
     )
@@ -323,7 +323,7 @@ class BaseEnvCfg:
                 },
             ),
             randomize_rigid_body_com = EventTerm(
-                func=mdp.randomize_base_body_com,
+                func=mdp.randomize_rigid_body_com,
                 mode="startup",
                 params={
                     "asset_cfg": SceneEntityCfg("robot", body_names=MISSING),
@@ -346,8 +346,8 @@ class BaseEnvCfg:
                 mode="startup",
                 params={
                     "asset_cfg": SceneEntityCfg("robot", joint_names=MISSING),
-                    "stiffness_distribution_params": (0.9, 1.1),
-                    "damping_distribution_params": (0.9, 1.1),
+                    "stiffness_distribution_params": (0.85, 1.15),
+                    "damping_distribution_params": (0.85, 1.15),
                     "operation": "scale",
                 },
             ),
