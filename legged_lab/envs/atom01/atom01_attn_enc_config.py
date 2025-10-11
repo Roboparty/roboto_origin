@@ -149,7 +149,7 @@ class ATOM01RewardCfg(RewardCfg):
                 "asset_cfg": SceneEntityCfg("robot", body_names=".*_ankle_roll.*"),
                 "sensor_cfg1": SceneEntityCfg("left_feet_scanner"),
                 "sensor_cfg2": SceneEntityCfg("right_feet_scanner"),
-                "ankle_height":0.035,"threshold":0.025})
+                "ankle_height":0.04,"threshold":0.02})
 
 def generate_map_scan_mirror(start_idx=0, rows=17, cols=11):
     mirror_indices = []
@@ -283,12 +283,12 @@ class ATOM01AttnEncEnvCfg(BaseEnvCfg):
 
     def __post_init__(self):
         super().__post_init__()
-        self.scene.height_scanner.prim_body_name = "torso_link"
+        self.scene.height_scanner.prim_body_name = "base_link"
         self.scene.robot = ATOM01_CFG
         self.scene.terrain_type = "generator"
         self.scene.terrain_generator = ROUGH_TERRAINS_CFG
         self.scene.height_scanner.enable_height_scan = True
-        self.robot.terminate_contacts_body_names = ["torso_link"]
+        self.robot.terminate_contacts_body_names = ["torso_link", ".*_thigh_yaw_link", ".*_thigh_roll_link"]
         self.robot.feet_body_names = [".*ankle_roll.*"]
         self.domain_rand.events.add_base_mass.params["asset_cfg"].body_names = ["torso_link", "base_link"]
         self.domain_rand.events.randomize_rigid_body_com.params["asset_cfg"].body_names = ["torso_link", "base_link"]
@@ -301,7 +301,7 @@ class ATOM01AttnEncEnvCfg(BaseEnvCfg):
         self.domain_rand.action_delay.params["max_delay"] = 2
         self.noise.noise_scales.joint_vel = 1.75
         self.noise.noise_scales.joint_pos = 0.03
-        self.normalization.height_scan_offset = 0.8
+        self.normalization.height_scan_offset = 0.75
         self.attn_enc: AttnEncCfg = AttnEncCfg(
             use_attn_enc=True
         )
@@ -350,12 +350,7 @@ class ATOM01AttnEncAgentCfg(BaseAgentCfg):
             desired_kl=0.01,
             max_grad_norm=1.0,
             normalize_advantage_per_mini_batch=False,
-            symmetry_cfg=RslRlSymmetryCfg(
-                use_data_augmentation=True, 
-                use_mirror_loss=True,
-                mirror_loss_coeff=0.2, 
-                data_augmentation_func=data_augmentation_func
-            ),
+            symmetry_cfg=None,
             rnd_cfg=None,  # RslRlRndCfg()
         )
         self.clip_actions = 100.0

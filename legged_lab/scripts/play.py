@@ -14,7 +14,7 @@ import os
 
 import torch
 from isaaclab.app import AppLauncher
-from rsl_rl.runners import AmpOnPolicyRunner, OnPolicyRunner
+from rsl_rl.runners import AmpOnPolicyRunner, OnPolicyRunner, AttnEncOnPolicyRunner
 
 from legged_lab.utils import task_registry
 
@@ -106,24 +106,27 @@ def play():
     resume_path = get_checkpoint_path(log_root_path, agent_cfg.load_run, agent_cfg.load_checkpoint)
     log_dir = os.path.dirname(resume_path)
 
-    runner_class: OnPolicyRunner | AmpOnPolicyRunner = eval(agent_cfg.runner_class_name)
+    runner_class: OnPolicyRunner | AmpOnPolicyRunner | AttnEncOnPolicyRunner = eval(agent_cfg.runner_class_name)
     runner = runner_class(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
     runner.load(resume_path, load_optimizer=False)
 
     policy = runner.get_inference_policy(device=env.device)
 
-    export_model_dir = os.path.join(os.path.dirname(resume_path), "exported")
-    export_policy_as_jit(runner.alg.policy, runner.obs_normalizer, path=export_model_dir, filename="policy.pt")
-    export_policy_as_onnx(
-        runner.alg.policy, normalizer=runner.obs_normalizer, path=export_model_dir, filename="policy.onnx"
-    )
+    if hasattr(env_cfg, "attn_enc"):
+        pass
+    else:
+        export_model_dir = os.path.join(os.path.dirname(resume_path), "exported")
+        export_policy_as_jit(runner.alg.policy, runner.obs_normalizer, path=export_model_dir, filename="policy.pt")
+        export_policy_as_onnx(
+            runner.alg.policy, normalizer=runner.obs_normalizer, path=export_model_dir, filename="policy.onnx"
+        )
 
     if not args_cli.headless:
         from legged_lab.utils.keyboard import Keyboard
 
         keyboard = Keyboard(env)  # noqa:F841
 
-    obs, _ = env.get_observations()
+    obs, extras = env.get_observations()
 
     while simulation_app.is_running():
         if kbd_control is not None:
@@ -134,8 +137,13 @@ def play():
                 env.command_generator.command[:, 2] = vel_command[2]  # ang_vel_z
 
         with torch.inference_mode():
-            actions = policy(obs)
-            obs, _, _, _ = env.step(actions)
+
+            if hasattr(env_cfg, "attn_enc"):
+                perception_obs = extras["observations"]["perception"]
+                actions = policy(perception_obs, obs)
+            else:
+                actions = policy(obs)
+            obs, _, _, extras = env.step(actions)
 
 
 if __name__ == "__main__":
