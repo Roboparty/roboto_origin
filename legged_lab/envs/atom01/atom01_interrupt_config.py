@@ -77,7 +77,7 @@ class ATOM01RewardCfg(RewardCfg):
         weight=-3e-3,
         params={
             "sensor_cfg": SceneEntityCfg("contact_sensor", body_names=".*ankle_roll.*"),
-            "threshold": 400,
+            "threshold": 500,
             "max_reward": 400,
         },
     )
