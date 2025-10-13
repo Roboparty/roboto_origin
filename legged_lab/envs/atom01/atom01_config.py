@@ -42,8 +42,8 @@ from legged_lab.terrains import GRAVEL_TERRAINS_CFG, ROUGH_TERRAINS_CFG
 class ATOM01RewardCfg(RewardCfg):
     track_lin_vel_xy_exp = RewTerm(func=mdp.track_lin_vel_xy_yaw_frame_exp, weight=1.0, params={"std": 0.5})
     track_ang_vel_z_exp = RewTerm(func=mdp.track_ang_vel_z_world_exp, weight=1.0, params={"std": 0.5})
-    lin_vel_z_l2 = RewTerm(func=mdp.lin_vel_z_l2, weight=-0.2)
-    ang_vel_xy_l2 = RewTerm(func=mdp.ang_vel_xy_l2, weight=-0.1)
+    lin_vel_z_l2 = RewTerm(func=mdp.lin_vel_z_l2, weight=-0.05)
+    ang_vel_xy_l2 = RewTerm(func=mdp.ang_vel_xy_l2, weight=-0.05)
     energy = RewTerm(func=mdp.energy, weight=-1e-4)
     joint_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1e-5)
     joint_vel_l2 = RewTerm(func=mdp.joint_vel_l2, weight=-2e-4)
@@ -82,12 +82,12 @@ class ATOM01RewardCfg(RewardCfg):
     feet_distance = RewTerm(
         func=mdp.body_distance_y,
         weight=0.1,
-        params={"asset_cfg": SceneEntityCfg("robot", body_names=[".*ankle_roll.*"]), "min": 0.17, "max": 0.50},
+        params={"asset_cfg": SceneEntityCfg("robot", body_names=[".*ankle_roll.*"]), "min": 0.16, "max": 0.50},
     )
     knee_distance = RewTerm(
         func=mdp.body_distance_y,
         weight=0.1,
-        params={"asset_cfg": SceneEntityCfg("robot", body_names=[".*_knee.*"]), "min": 0.185, "max": 0.35},
+        params={"asset_cfg": SceneEntityCfg("robot", body_names=[".*_knee.*"]), "min": 0.18, "max": 0.35},
     )
     feet_stumble = RewTerm(
         func=mdp.feet_stumble,
@@ -96,7 +96,7 @@ class ATOM01RewardCfg(RewardCfg):
     )
     feet_orientation_l2 = RewTerm(
         func=mdp.body_orientation_l2,
-        weight=-0.2,
+        weight=-0.1,
         params={"asset_cfg": SceneEntityCfg("robot", body_names=[".*ankle_roll.*"])},
     )
     dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=-1.0)
@@ -135,21 +135,21 @@ class ATOM01RewardCfg(RewardCfg):
     )
     feet_contact_without_cmd = RewTerm(
         func=mdp.feet_contact_without_cmd,
-        weight=0.15,
+        weight=0.1,
         params={"sensor_cfg": SceneEntityCfg("contact_sensor", body_names=[".*ankle_roll.*"])},
     )
     upward = RewTerm(func=mdp.upward, weight=0.4)
-    stand_still = RewTerm(func=mdp.stand_still, weight=-0.3, params={"pos_cfg": SceneEntityCfg("robot", joint_names=[".*_arm.*", ".*_elbow.*", ".*torso.*", ".*_thigh.*", ".*_knee.*", ".*_ankle.*"]),
+    stand_still = RewTerm(func=mdp.stand_still, weight=-0.4, params={"pos_cfg": SceneEntityCfg("robot", joint_names=[".*_arm.*", ".*_elbow.*", ".*torso.*", ".*_thigh.*", ".*_knee.*", ".*_ankle.*"]),
                                                                      "vel_cfg": SceneEntityCfg("robot", joint_names=[".*_arm.*", ".*_elbow.*", ".*torso.*", ".*_thigh.*", ".*_knee.*", ".*_ankle.*"]), 
                                                                      "pos_weight": 1.0, "vel_weight": 0.04})
     feet_height = RewTerm(
         func=mdp.feet_height,
-        weight=0.15,
+        weight=0.2,
         params={"sensor_cfg": SceneEntityCfg("contact_sensor", body_names=".*ankle_roll.*"),
                 "asset_cfg": SceneEntityCfg("robot", body_names=".*_ankle_roll.*"),
                 "sensor_cfg1": SceneEntityCfg("left_feet_scanner"),
                 "sensor_cfg2": SceneEntityCfg("right_feet_scanner"),
-                "ankle_height":0.035,"threshold":0.025})
+                "ankle_height":0.04,"threshold":0.02})
 
 def generate_height_scan_mirror(start_idx=140, rows=17, cols=11):
     mirror_indices = []
@@ -262,12 +262,12 @@ class ATOM01FlatEnvCfg(BaseEnvCfg):
 
     def __post_init__(self):
         super().__post_init__()
-        self.scene.height_scanner.prim_body_name = "torso_link"
+        self.scene.height_scanner.prim_body_name = "base_link"
         self.scene.robot = ATOM01_CFG
         self.scene.terrain_type = "generator"
         self.scene.terrain_generator = GRAVEL_TERRAINS_CFG
         self.scene.height_scanner.enable_height_scan = True
-        self.robot.terminate_contacts_body_names = ["torso_link"]
+        self.robot.terminate_contacts_body_names = ["torso_link", ".*_thigh_yaw_link", ".*_thigh_roll_link"]
         self.robot.feet_body_names = [".*ankle_roll.*"]
         self.domain_rand.events.add_base_mass.params["asset_cfg"].body_names = ["torso_link", "base_link"]
         self.domain_rand.events.randomize_rigid_body_com.params["asset_cfg"].body_names = ["torso_link", "base_link"]
@@ -275,8 +275,7 @@ class ATOM01FlatEnvCfg(BaseEnvCfg):
         self.domain_rand.events.scale_actuator_gains.params["asset_cfg"].joint_names = [".*_joint"]
         self.domain_rand.events.scale_joint_parameters.params["asset_cfg"].joint_names = [".*_joint"]
         self.robot.action_scale = 0.25
-        self.domain_rand.action_delay.params["max_delay"] = 4
-        self.noise.noise_scales.ang_vel = 0.35
+        self.domain_rand.action_delay.params["max_delay"] = 2
         self.noise.noise_scales.joint_vel = 1.75
         self.noise.noise_scales.joint_pos = 0.03
 
@@ -307,12 +306,7 @@ class ATOM01FlatAgentCfg(BaseAgentCfg):
             desired_kl=0.01,
             max_grad_norm=1.0,
             normalize_advantage_per_mini_batch=False,
-            symmetry_cfg=RslRlSymmetryCfg(
-                use_data_augmentation=True, 
-                use_mirror_loss=True,
-                mirror_loss_coeff=0.2, 
-                data_augmentation_func=data_augmentation_func
-            ),
+            symmetry_cfg=None,
             rnd_cfg=None,  # RslRlRndCfg()
         )
         self.clip_actions = 100.0
