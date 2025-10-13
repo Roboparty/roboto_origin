@@ -63,6 +63,9 @@ class BaseEnv(VecEnv):
         if self.cfg.scene.height_scanner.enable_height_scan:
             self.height_scanner: RayCaster = self.scene.sensors["height_scanner"]
 
+        self.left_feet_scanner_cfg = SceneEntityCfg("left_feet_scanner")
+        self.right_feet_scanner_cfg = SceneEntityCfg("right_feet_scanner")
+
         command_cfg = UniformVelocityCommandCfg(
             asset_name="robot",
             resampling_time_range=self.cfg.commands.resampling_time_range,
@@ -158,13 +161,13 @@ class BaseEnv(VecEnv):
         [
             self.scene[sensor_cfg.name].data.pos_w[:, 2]
             - self.scene[sensor_cfg.name].data.ray_hits_w[..., 2].mean(dim=-1)
-            for sensor_cfg in [SceneEntityCfg("left_feet_scanner"), SceneEntityCfg("right_feet_scanner")]
+            for sensor_cfg in [self.left_feet_scanner_cfg, self.right_feet_scanner_cfg]
             if sensor_cfg is not None
         ],
         dim=-1,
         )
-        feet_height = torch.nan_to_num(feet_height, nan=0, posinf=0, neginf=0)
-        feet_height = torch.clamp(feet_height - 0.035, min=0.0)
+        feet_height = torch.clamp(feet_height - 0.04, min=0.0, max=0.2)
+        feet_height = torch.nan_to_num(feet_height, nan=0, posinf=0.2, neginf=0)
         joint_torque = robot.data.applied_torque
         joint_acc = robot.data.joint_acc
         action_delay = self.action_buffer.time_lags.to(self.device).unsqueeze(1)
@@ -181,10 +184,12 @@ class BaseEnv(VecEnv):
 
         if self.cfg.scene.height_scanner.enable_height_scan:
             height_scan = (
-                self.height_scanner.data.pos_w[:, 2].unsqueeze(1)
-                - self.height_scanner.data.ray_hits_w[..., 2]
-                - self.cfg.normalization.height_scan_offset
-            ) * self.obs_scales.height_scan
+                    self.height_scanner.data.pos_w[:, 2].unsqueeze(1)
+                    - self.height_scanner.data.ray_hits_w[..., 2]
+                )
+            height_scan = torch.clamp(height_scan - self.cfg.normalization.height_scan_offset, min=-self.cfg.normalization.height_scan_offset, max=self.cfg.normalization.height_scan_offset)
+            height_scan = torch.nan_to_num(height_scan, nan=0, posinf=self.cfg.normalization.height_scan_offset, neginf=-self.cfg.normalization.height_scan_offset)
+            height_scan *= self.obs_scales.height_scan
             current_critic_obs = torch.cat([current_critic_obs, height_scan], dim=-1)
             if self.add_noise:
                 height_scan += (2 * torch.rand_like(height_scan) - 1) * self.height_scan_noise_vec
@@ -312,8 +317,10 @@ class BaseEnv(VecEnv):
                 height_scan = (
                     self.height_scanner.data.pos_w[:, 2].unsqueeze(1)
                     - self.height_scanner.data.ray_hits_w[..., 2]
-                    - self.cfg.normalization.height_scan_offset
                 )
+                height_scan = torch.clamp(height_scan - self.cfg.normalization.height_scan_offset, min=-self.cfg.normalization.height_scan_offset, max=self.cfg.normalization.height_scan_offset)
+                height_scan = torch.nan_to_num(height_scan, nan=0, posinf=self.cfg.normalization.height_scan_offset, neginf=-self.cfg.normalization.height_scan_offset)
+                height_scan *= self.obs_scales.height_scan
                 height_scan_noise_vec = torch.zeros_like(height_scan[0])
                 height_scan_noise_vec[:] = noise_scales.height_scan * self.obs_scales.height_scan
                 self.height_scan_noise_vec = height_scan_noise_vec
