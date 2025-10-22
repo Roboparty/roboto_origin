@@ -43,10 +43,27 @@ simulation_app = app_launcher.app
 from isaaclab_rl.rsl_rl import export_policy_as_jit, export_policy_as_onnx
 from isaaclab_tasks.utils import get_checkpoint_path
 from isaaclab.devices import Se2Keyboard
+from isaaclab.markers import VisualizationMarkers
 
 from legged_lab.envs import *  # noqa:F401, F403
 from legged_lab.utils.cli_args import update_rsl_rl_cfg
 
+def visualize_attention(map_scan, root_pose, output_attn, visualizer):
+    root_pos = root_pose[:, :3]  # shape (B, 3)
+    map_scan_world = -map_scan + root_pos.unsqueeze(1).unsqueeze(1)  # shape (B, W, L, 3)
+    B = root_pos.shape[0]
+
+    max_attn_per_env, _ = torch.max(output_attn.view(B, -1), dim=1)
+    max_attn_per_env[max_attn_per_env == 0] = 1.0
+    normalized_attn = output_attn / max_attn_per_env.view(B, 1, 1)
+    normalized_attn = normalized_attn.view(-1)
+    # print(normalized_attn)
+    attention_indices = torch.zeros_like(normalized_attn, dtype=torch.int)
+    for i in range(10):
+        color_mask = (normalized_attn > 0.1 * i)
+        color_mask = torch.bitwise_and(color_mask, normalized_attn < 0.1 * (i + 1))
+        attention_indices[color_mask] = i
+    visualizer.visualize(translations=map_scan_world.view(-1, 3), marker_indices=attention_indices)
 
 def play():
     runner: OnPolicyRunner
@@ -67,9 +84,9 @@ def play():
         env_cfg.commands.heading_command=False
         env_cfg.commands.rel_standing_envs = 0.0
         kbd_control = Se2Keyboard(
-            v_x_sensitivity=env_cfg.commands.ranges.lin_vel_x[1], 
-            v_y_sensitivity=env_cfg.commands.ranges.lin_vel_y[1], 
-            omega_z_sensitivity=env_cfg.commands.ranges.ang_vel_z[1]
+            v_x_sensitivity=0.6, 
+            v_y_sensitivity=0.3, 
+            omega_z_sensitivity=0.8
         )
     else:
         env_cfg.commands.ranges.lin_vel_x = (0.6, 0.6)
@@ -85,10 +102,13 @@ def play():
         env_cfg.scene.terrain_generator.num_rows = 5
         env_cfg.scene.terrain_generator.num_cols = 5
         env_cfg.scene.terrain_generator.curriculum = False
-        env_cfg.scene.terrain_generator.difficulty_range = (0.4, 0.4)
+        env_cfg.scene.terrain_generator.difficulty_range = (1.0, 1.0)
 
     if args_cli.num_envs is not None:
         env_cfg.scene.num_envs = args_cli.num_envs
+
+    if hasattr(env_cfg, "attn_enc"):
+        visualizer = VisualizationMarkers(env_cfg.attn_enc.marker_cfg)
 
     agent_cfg = update_rsl_rl_cfg(agent_cfg, args_cli)
     env_cfg.scene.seed = agent_cfg.seed
@@ -140,7 +160,21 @@ def play():
 
             if hasattr(env_cfg, "attn_enc"):
                 perception_obs = extras["observations"]["perception"]
-                actions = policy(perception_obs, obs)
+                actions, output_attn = policy(perception_obs, obs)
+                height_scan = (
+                    env.height_scanner.data.pos_w[:, :3].unsqueeze(1) - env.height_scanner.data.ray_hits_w[..., :3]
+                )
+                grid_size = env.height_scanner.cfg.pattern_cfg.size  # [L,W] (m)
+                resolution = env.height_scanner.cfg.pattern_cfg.resolution
+                grid_shape = (int(grid_size[0] / resolution) + 1, int(grid_size[1] / resolution) + 1)
+                L = grid_shape[0]
+                W = grid_shape[1]
+                B = height_scan.shape[0]
+                height_scan = height_scan.view(B, W, L, 3)
+                height_scan[..., 2] = torch.clamp(height_scan[..., 2] - env_cfg.normalization.height_scan_offset, min=-1.0, max=1.0)
+                height_scan = torch.nan_to_num(height_scan, nan=0, posinf=1.0, neginf=-1.0)
+                root_pose = env.robot.data.root_pos_w
+                visualize_attention(height_scan, root_pose, output_attn, visualizer)
             else:
                 actions = policy(obs)
             obs, _, _, extras = env.step(actions)
