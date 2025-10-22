@@ -245,8 +245,8 @@ def feet_height(env: BaseEnv, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntity
         ],
         dim=-1,
     )
-    feet_height = torch.clamp(feet_height - ankle_height, min=0.0, max=0.2)
-    feet_height = torch.nan_to_num(feet_height, nan=0, posinf=0.2, neginf=0)
+    feet_height = torch.clamp(feet_height - ankle_height, min=0.0, max=1.0)
+    feet_height = torch.nan_to_num(feet_height, nan=0, posinf=1.0, neginf=0)
     # Compute single_stance mask
     single_stance = contacts.sum(dim=1) == 1
     # feet height should be closed to target feet height at the peak

@@ -72,7 +72,7 @@ class ATOM01InterruptEnv(BaseEnv):
             self.interrupt_scale = torch.tensor(self.cfg.interrupt.interrupt_scale, dtype=torch.float, device=self.device, requires_grad=False).unsqueeze(0)
             self.interrupt_lower_bound = torch.tensor(self.cfg.interrupt.interrupt_lower_bound, dtype=torch.float, device=self.device, requires_grad=False).unsqueeze(0)
             self.interrupt_rad_curriculum = torch.zeros(self.num_envs, dtype=torch.float, device=self.device, requires_grad=False)
-            self.interrupt_vis = VisualizationMarkers(self.cfg.interrupt_vis_cfg)
+            self.interrupt_vis = VisualizationMarkers(self.cfg.interrupt_vis)
             self.interrupt_vis.set_visibility(True)
         
         self.init_obs_buffer()
@@ -114,8 +114,8 @@ class ATOM01InterruptEnv(BaseEnv):
         ],
         dim=-1,
         )
-        feet_height = torch.clamp(feet_height - 0.04, min=0.0, max=0.2)
-        feet_height = torch.nan_to_num(feet_height, nan=0, posinf=0.2, neginf=0)
+        feet_height = torch.clamp(feet_height - 0.04, min=0.0, max=1.0)
+        feet_height = torch.nan_to_num(feet_height, nan=0, posinf=1.0, neginf=0)
         joint_torque = robot.data.applied_torque
         joint_acc = robot.data.joint_acc
         action_delay = self.action_buffer.time_lags.to(self.device).unsqueeze(1)
