@@ -9,6 +9,9 @@
 # This file contains code derived from Isaac Lab Project (BSD-3-Clause license)
 # with modifications by Legged Lab Project (BSD-3-Clause license).
 
+import isaaclab.sim as sim_utils
+from isaaclab.markers import VisualizationMarkersCfg
+import matplotlib as mpl
 from isaaclab.managers import RewardTermCfg as RewTerm
 from isaaclab.managers.scene_entity_cfg import SceneEntityCfg
 from isaaclab.utils import configclass
@@ -40,8 +43,8 @@ from legged_lab.terrains import GRAVEL_TERRAINS_CFG, ROUGH_TERRAINS_CFG
 
 @configclass
 class ATOM01RewardCfg(RewardCfg):
-    track_lin_vel_xy_exp = RewTerm(func=mdp.track_lin_vel_xy_yaw_frame_exp, weight=1.0, params={"std": 0.5})
-    track_ang_vel_z_exp = RewTerm(func=mdp.track_ang_vel_z_world_exp, weight=1.0, params={"std": 0.5})
+    track_lin_vel_xy_exp = RewTerm(func=mdp.track_lin_vel_xy_yaw_frame_exp, weight=5.0, params={"std": 1.0})
+    track_ang_vel_z_exp = RewTerm(func=mdp.track_ang_vel_z_world_exp, weight=3.0, params={"std": 1.0})
     lin_vel_z_l2 = RewTerm(func=mdp.lin_vel_z_l2, weight=-0.05)
     ang_vel_xy_l2 = RewTerm(func=mdp.ang_vel_xy_l2, weight=-0.05)
     energy = RewTerm(func=mdp.energy, weight=-1e-4)
@@ -102,7 +105,7 @@ class ATOM01RewardCfg(RewardCfg):
     dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=-1.0)
     joint_deviation_hip = RewTerm(
         func=mdp.joint_deviation_l1,
-        weight=-0.06,
+        weight=-0.03,
         params={
             "asset_cfg": SceneEntityCfg(
                 "robot", joint_names=[".*_thigh_yaw.*", ".*_thigh_roll.*"]
@@ -139,7 +142,7 @@ class ATOM01RewardCfg(RewardCfg):
         params={"sensor_cfg": SceneEntityCfg("contact_sensor", body_names=[".*ankle_roll.*"])},
     )
     upward = RewTerm(func=mdp.upward, weight=0.4)
-    stand_still = RewTerm(func=mdp.stand_still, weight=-0.4, params={"pos_cfg": SceneEntityCfg("robot", joint_names=[".*_arm.*", ".*_elbow.*", ".*torso.*", ".*_thigh.*", ".*_knee.*", ".*_ankle.*"]),
+    stand_still = RewTerm(func=mdp.stand_still, weight=-0.2, params={"pos_cfg": SceneEntityCfg("robot", joint_names=[".*_arm.*", ".*_elbow.*", ".*torso.*", ".*_thigh.*", ".*_knee.*", ".*_ankle.*"]),
                                                                      "vel_cfg": SceneEntityCfg("robot", joint_names=[".*_arm.*", ".*_elbow.*", ".*torso.*", ".*_thigh.*", ".*_knee.*", ".*_ankle.*"]), 
                                                                      "pos_weight": 1.0, "vel_weight": 0.04})
     feet_height = RewTerm(
@@ -180,41 +183,39 @@ def generate_joint_mirror(start_idx):
     mirror_signs = [-1, -1, -1, -1, -1, 1, 1, 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, 1, 1, -1, -1, -1, -1]
     return mirror_indices, mirror_signs
 
-joint_pos_mirror_indices, joint_pos_mirror_signs = generate_joint_mirror(9)
-joint_vel_mirror_indices, joint_vel_mirror_signs = generate_joint_mirror(32)
-action_mirror_indices, action_mirror_signs = generate_joint_mirror(55)
+joint_pos_mirror_indices, joint_pos_mirror_signs = generate_joint_mirror(12)
+joint_vel_mirror_indices, joint_vel_mirror_signs = generate_joint_mirror(35)
+action_mirror_indices, action_mirror_signs = generate_joint_mirror(58)
 policy_obs_mirror_indices = [0, 1, 2,\
                              3, 4, 5,\
-                             6, 7, 8]\
+                             6, 7, 8,\
+                             9, 10, 11]\
                             + joint_pos_mirror_indices + joint_vel_mirror_indices + action_mirror_indices
 policy_obs_mirror_signs = [-1, 1, -1,\
+                           1, -1, 1,\
                            1, -1, 1,\
                            1, -1, -1] + joint_pos_mirror_signs + joint_vel_mirror_signs + action_mirror_signs
 joint_acc_mirror_indices, joint_acc_mirror_signs = generate_joint_mirror(93)
 joint_torques_mirror_indices, joint_torques_mirror_signs = generate_joint_mirror(116)
 critic_obs_mirror_indices = policy_obs_mirror_indices +\
-                            [78, 79, 80,\
-                             82, 81,\
+                            [82, 81,\
                              86, 87, 88, 83, 84, 85,\
                              90, 89,\
                              92, 91]\
                             + joint_acc_mirror_indices + joint_torques_mirror_indices +\
                             [139]
 critic_obs_mirror_signs = policy_obs_mirror_signs +\
-                           [1, -1, 1,\
-                            1, 1,\
+                           [1, 1,\
                             1, -1, 1, 1, -1, 1,\
                             1, 1,\
-                            1, 1]\
-                            + joint_acc_mirror_signs + joint_torques_mirror_signs +\
-                            [1]
+                            1, 1]
 act_mirror_indices = [1, 0, 2, 4, 3, 6, 5, 8, 7, 10, 9, 12, 11, 14, 13, 16, 15, 18, 17, 20, 19, 22, 21]
 act_mirror_signs = [-1, -1, -1, -1, -1, 1, 1, 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, 1, 1, -1, -1, -1, -1]
 map_scan_mirror_indices, map_scan_mirror_signs = generate_map_scan_mirror(0, 17, 11)
 
 policy_obs_mirror_indices_expanded = []
 for i in range(1):
-    offset = i * 78
+    offset = i * 81
     for idx in policy_obs_mirror_indices:
         policy_obs_mirror_indices_expanded.append(idx + offset)
 policy_obs_mirror_signs_expanded = policy_obs_mirror_signs * 1
@@ -276,10 +277,28 @@ def data_augmentation_func(env, obs, actions, obs_type):
         actions_aug = torch.cat((actions, mirror_actions(actions)), dim=0)
     return obs_aug, actions_aug
 
+color = [mpl.colormaps['viridis'](i/9.0)[:-1] for i in range(10)]
+markers = {}
+for i in range(10):
+    markers[f"hit_{i}"] = sim_utils.SphereCfg(
+        radius=0.02,
+        visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=color[i])
+    )
 @configclass
-class ATOM01AttnEncEnvCfg(BaseEnvCfg):
+class AttnEncCfg:
+    use_attn_enc: bool = False
+    marker_cfg = VisualizationMarkersCfg(
+        prim_path="/Visuals/Attention",
+        markers=markers,
+    )   
+
+@configclass
+class ATOM01AttnEncStage1EnvCfg(BaseEnvCfg):
 
     reward = ATOM01RewardCfg()
+    attn_enc = AttnEncCfg(
+            use_attn_enc=True
+        )
 
     def __post_init__(self):
         super().__post_init__()
@@ -288,8 +307,46 @@ class ATOM01AttnEncEnvCfg(BaseEnvCfg):
         self.scene.terrain_type = "generator"
         self.scene.terrain_generator = ROUGH_TERRAINS_CFG
         self.scene.height_scanner.enable_height_scan = True
-        self.robot.terminate_contacts_body_names = ["torso_link", ".*_thigh_yaw_link", ".*_thigh_roll_link"]
+        self.scene.height_scanner.resolution = 0.08
+        self.scene.height_scanner.size = (1.2, 0.8)
+        self.robot.terminate_contacts_body_names = ["torso_link", ".*_thigh_yaw_link", ".*_thigh_roll_link", ".*_elbow_yaw_link"]
         self.robot.feet_body_names = [".*ankle_roll.*"]
+        self.noise.add_noise = False
+        self.domain_rand.events.add_base_mass = None
+        self.domain_rand.events.randomize_rigid_body_com = None
+        self.domain_rand.events.scale_link_mass = None
+        self.domain_rand.events.scale_actuator_gains = None
+        self.domain_rand.events.scale_joint_parameters = None
+        self.domain_rand.events.push_robot = None
+        self.robot.action_scale = 0.25
+        self.robot.actor_obs_history_length = 1
+        self.robot.critic_obs_history_length = 1
+        self.domain_rand.action_delay.params["max_delay"] = 4
+        self.normalization.height_scan_offset = 0.75
+        self.sim.physx.gpu_collision_stack_size = 2**29
+        self.commands.ranges.lin_vel_x = (0.0, 1.0)
+
+
+@configclass
+class ATOM01AttnEncStage2EnvCfg(BaseEnvCfg):
+
+    reward = ATOM01RewardCfg()
+    attn_enc = AttnEncCfg(
+            use_attn_enc=True
+        )
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.scene.height_scanner.prim_body_name = "base_link"
+        self.scene.robot = ATOM01_CFG
+        self.scene.terrain_type = "generator"
+        self.scene.terrain_generator = ROUGH_TERRAINS_CFG
+        self.scene.height_scanner.enable_height_scan = True
+        self.scene.height_scanner.resolution = 0.08
+        self.scene.height_scanner.size = (0.64, 0.8)
+        self.robot.terminate_contacts_body_names = ["torso_link", ".*_thigh_yaw_link", ".*_thigh_roll_link", ".*_elbow_yaw_link"]
+        self.robot.feet_body_names = [".*ankle_roll.*"]
+        self.noise.add_noise = True
         self.domain_rand.events.add_base_mass.params["asset_cfg"].body_names = ["torso_link", "base_link"]
         self.domain_rand.events.randomize_rigid_body_com.params["asset_cfg"].body_names = ["torso_link", "base_link"]
         self.domain_rand.events.scale_link_mass.params["asset_cfg"].body_names = ["left_.*_link", "right_.*_link"]
@@ -298,23 +355,21 @@ class ATOM01AttnEncEnvCfg(BaseEnvCfg):
         self.robot.action_scale = 0.25
         self.robot.actor_obs_history_length = 1
         self.robot.critic_obs_history_length = 1
-        self.domain_rand.action_delay.params["max_delay"] = 2
+        self.domain_rand.action_delay.params["max_delay"] = 4
         self.noise.noise_scales.joint_vel = 1.75
         self.noise.noise_scales.joint_pos = 0.03
         self.normalization.height_scan_offset = 0.75
-        self.attn_enc: AttnEncCfg = AttnEncCfg(
-            use_attn_enc=True
-        )
+        self.sim.physx.gpu_collision_stack_size = 2**29
+        self.commands.ranges.lin_vel_x = (0.0, 1.0)
 
 
 @configclass
 class RslRlPpoEncActorCriticCfg(RslRlPpoActorCriticCfg):
     embedding_dim:int = 64
-    output_attention: bool = False
     
 
 @configclass
-class ATOM01AttnEncAgentCfg(BaseAgentCfg):
+class ATOM01AttnEncStage1AgentCfg(BaseAgentCfg):
     def __post_init__(self):
         super().__post_init__()
         self.experiment_name: str = "atom01_attn_enc"
@@ -333,7 +388,6 @@ class ATOM01AttnEncAgentCfg(BaseAgentCfg):
             critic_hidden_dims=[512, 256, 128],
             activation="elu",
             embedding_dim=64,
-            output_attention=False
         )
         self.algorithm = RslRlPpoAlgorithmCfg(
             class_name="AttnEncPPO",
@@ -355,6 +409,44 @@ class ATOM01AttnEncAgentCfg(BaseAgentCfg):
         )
         self.clip_actions = 100.0
 
+
 @configclass
-class AttnEncCfg:
-    use_attn_enc: bool = False
+class ATOM01AttnEncStage2AgentCfg(BaseAgentCfg):
+    def __post_init__(self):
+        super().__post_init__()
+        self.experiment_name: str = "atom01_attn_enc"
+        self.wandb_project: str = "atom01_attn_enc"
+        self.seed = 42
+        self.num_steps_per_env = 24
+        self.max_iterations = 9001
+        self.save_interval = 1000
+        self.runner_class_name = "AttnEncOnPolicyRunner"
+        self.empirical_normalization = True
+        self.policy = RslRlPpoEncActorCriticCfg(
+            class_name="AttnEncActorCritic",
+            init_noise_std=1.0,
+            noise_std_type="scalar",
+            actor_hidden_dims=[512, 256, 128],
+            critic_hidden_dims=[512, 256, 128],
+            activation="elu",
+            embedding_dim=64,
+        )
+        self.algorithm = RslRlPpoAlgorithmCfg(
+            class_name="AttnEncPPO",
+            value_loss_coef=1.0,
+            use_clipped_value_loss=True,
+            clip_param=0.2,
+            entropy_coef=0.002,
+            num_learning_epochs=5,
+            num_mini_batches=4,
+            learning_rate=1.0e-3,
+            schedule="adaptive",
+            gamma=0.99,
+            lam=0.95,
+            desired_kl=0.01,
+            max_grad_norm=1.0,
+            normalize_advantage_per_mini_batch=False,
+            symmetry_cfg=None,
+            rnd_cfg=None,  # RslRlRndCfg()
+        )
+        self.clip_actions = 100.0

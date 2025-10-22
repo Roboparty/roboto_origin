@@ -29,8 +29,10 @@ from legged_lab.envs.atom01.atom01_amp_config import (
 )
 from legged_lab.envs.atom01.atom01_amp_env import ATOM01AmpEnv
 from legged_lab.envs.atom01.atom01_attn_enc_config import (
-    ATOM01AttnEncAgentCfg,
-    ATOM01AttnEncEnvCfg
+    ATOM01AttnEncStage1AgentCfg,
+    ATOM01AttnEncStage1EnvCfg,
+    ATOM01AttnEncStage2AgentCfg,
+    ATOM01AttnEncStage2EnvCfg
 )
 from legged_lab.envs.atom01.atom01_attn_enc_env import ATOM01AttnEncEnv
 from legged_lab.utils.task_registry import task_registry
@@ -39,4 +41,5 @@ task_registry.register("atom01_rough", BaseEnv, ATOM01RoughEnvCfg(), ATOM01Rough
 task_registry.register("atom01_flat", BaseEnv, ATOM01FlatEnvCfg(), ATOM01FlatAgentCfg())
 task_registry.register("atom01_interrupt", ATOM01InterruptEnv, ATOM01InterruptEnvCfg(), ATOM01InterruptAgentCfg())
 task_registry.register("atom01_amp", ATOM01AmpEnv, ATOM01AmpEnvCfg(), ATOM01AmpAgentCfg())
-task_registry.register("atom01_attn_enc", ATOM01AttnEncEnv, ATOM01AttnEncEnvCfg(), ATOM01AttnEncAgentCfg())
+task_registry.register("atom01_attn_enc_stage1", ATOM01AttnEncEnv, ATOM01AttnEncStage1EnvCfg(), ATOM01AttnEncStage1AgentCfg())
+task_registry.register("atom01_attn_enc_stage2", ATOM01AttnEncEnv, ATOM01AttnEncStage2EnvCfg(), ATOM01AttnEncStage2AgentCfg())
