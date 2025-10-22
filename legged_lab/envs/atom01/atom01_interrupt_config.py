@@ -104,7 +104,7 @@ class ATOM01RewardCfg(RewardCfg):
     dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=-1.0)
     joint_deviation_hip = RewTerm(
         func=mdp.joint_deviation_l1,
-        weight=-0.06,
+        weight=-0.03,
         params={
             "asset_cfg": SceneEntityCfg(
                 "robot", joint_names=[".*_thigh_yaw.*", ".*_thigh_roll.*"]
@@ -145,7 +145,7 @@ class ATOM01RewardCfg(RewardCfg):
         params={"sensor_cfg": SceneEntityCfg("contact_sensor", body_names=[".*ankle_roll.*"])},
     )
     upward = RewTerm(func=mdp.upward, weight=0.4)
-    stand_still = RewTerm(func=mdp.stand_still_interrupt, weight=-0.4, params={"pos_cfg": SceneEntityCfg("robot", joint_names=[".*_arm.*", ".*_elbow.*", ".*torso.*", ".*_thigh.*", ".*_knee.*", ".*_ankle.*"]),
+    stand_still = RewTerm(func=mdp.stand_still_interrupt, weight=-0.2, params={"pos_cfg": SceneEntityCfg("robot", joint_names=[".*_arm.*", ".*_elbow.*", ".*torso.*", ".*_thigh.*", ".*_knee.*", ".*_ankle.*"]),
                                                                                "vel_cfg": SceneEntityCfg("robot", joint_names=[".*_arm.*", ".*_elbow.*", ".*torso.*", ".*_thigh.*", ".*_knee.*", ".*_ankle.*"]), 
                                                                                "interrupt_cfg": SceneEntityCfg("robot", joint_names=[".*_arm.*", ".*_elbow_pitch.*"]),
                                                                                "pos_weight": 1.0, "vel_weight": 0.04})
@@ -265,30 +265,35 @@ def data_augmentation_func(env, obs, actions, obs_type):
     return obs_aug, actions_aug
 
 @configclass
+class InterruptCfg:
+    use_interrupt: bool = False
+    max_curriculum: float = 1.0
+    interrupt_ratio: float = 0.5
+    interrupt_joint_names: list = []
+    interrupt_scale : list = []
+    interrupt_lower_bound: list = []
+    interrupt_init_range: float = 0.2
+    interrupt_update_step: int = 30
+    switch_prob: float = 0.005
+    interrupt_vis: VisualizationMarkersCfg = VisualizationMarkersCfg(
+        markers={
+            "interrupt": sim_utils.SphereCfg(
+                radius=0.1,
+                visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 1.0, 0.0)),
+            ),
+            "no_interrupt": sim_utils.SphereCfg(
+                radius=0.1,
+                visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(1.0, 0.0, 0.0)),
+            ),
+        },
+        prim_path="/Visuals/Command/interrupt",
+    )
+
+@configclass
 class ATOM01InterruptEnvCfg(BaseEnvCfg):
 
     reward = ATOM01RewardCfg()
-
-    def __post_init__(self):
-        super().__post_init__()
-        self.scene.height_scanner.prim_body_name = "base_link"
-        self.scene.robot = ATOM01_CFG
-        self.scene.terrain_type = "generator"
-        self.scene.terrain_generator = GRAVEL_TERRAINS_CFG
-        self.scene.height_scanner.enable_height_scan = True
-        self.robot.terminate_contacts_body_names = ["torso_link", ".*_thigh_yaw_link", ".*_thigh_roll_link"]
-        self.robot.feet_body_names = [".*ankle_roll.*"]
-        self.domain_rand.events.add_base_mass.params["asset_cfg"].body_names = ["torso_link", "base_link"]
-        self.domain_rand.events.randomize_rigid_body_com.params["asset_cfg"].body_names = ["torso_link", "base_link"]
-        self.domain_rand.events.scale_link_mass.params["asset_cfg"].body_names = ["left_.*_link", "right_.*_link"]
-        self.domain_rand.events.scale_actuator_gains.params["asset_cfg"].joint_names = [".*_joint"]
-        self.domain_rand.events.scale_joint_parameters.params["asset_cfg"].joint_names = [".*_joint"]
-        self.robot.action_scale = 0.25
-        self.domain_rand.action_delay.params["max_delay"] = 2
-        self.noise.noise_scales.joint_vel = 1.75
-        self.noise.noise_scales.joint_pos = 0.03
-
-        self.interrupt: InterruptCfg = InterruptCfg(
+    interrupt = InterruptCfg(
         use_interrupt = True,
         max_curriculum = 1.0,
         interrupt_ratio = 0.5,
@@ -326,7 +331,7 @@ class ATOM01InterruptEnvCfg(BaseEnvCfg):
         interrupt_update_step = 30,
         switch_prob = 0.005,
     )
-    interrupt_vis_cfg = VisualizationMarkersCfg(
+    interrupt_vis = VisualizationMarkersCfg(
         markers={
             "interrupt": sim_utils.SphereCfg(
                 radius=0.1,
@@ -339,6 +344,25 @@ class ATOM01InterruptEnvCfg(BaseEnvCfg):
         },
         prim_path="/Visuals/Command/interrupt",
     )
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.scene.height_scanner.prim_body_name = "base_link"
+        self.scene.robot = ATOM01_CFG
+        self.scene.terrain_type = "generator"
+        self.scene.terrain_generator = GRAVEL_TERRAINS_CFG
+        self.scene.height_scanner.enable_height_scan = True
+        self.robot.terminate_contacts_body_names = ["torso_link", ".*_thigh_yaw_link", ".*_thigh_roll_link"]
+        self.robot.feet_body_names = [".*ankle_roll.*"]
+        self.domain_rand.events.add_base_mass.params["asset_cfg"].body_names = ["torso_link", "base_link"]
+        self.domain_rand.events.randomize_rigid_body_com.params["asset_cfg"].body_names = ["torso_link", "base_link"]
+        self.domain_rand.events.scale_link_mass.params["asset_cfg"].body_names = ["left_.*_link", "right_.*_link"]
+        self.domain_rand.events.scale_actuator_gains.params["asset_cfg"].joint_names = [".*_joint"]
+        self.domain_rand.events.scale_joint_parameters.params["asset_cfg"].joint_names = [".*_joint"]
+        self.robot.action_scale = 0.25
+        self.domain_rand.action_delay.params["max_delay"] = 4
+        self.noise.noise_scales.joint_vel = 1.75
+        self.noise.noise_scales.joint_pos = 0.03
 
 
 @configclass
@@ -371,28 +395,3 @@ class ATOM01InterruptAgentCfg(BaseAgentCfg):
             rnd_cfg=None,  # RslRlRndCfg()
         )
         self.clip_actions = 100.0
-
-@configclass
-class InterruptCfg:
-    use_interrupt: bool = False
-    max_curriculum: float = 1.0
-    interrupt_ratio: float = 0.5
-    interrupt_joint_names: list = []
-    interrupt_scale : list = []
-    interrupt_lower_bound: list = []
-    interrupt_init_range: float = 0.2
-    interrupt_update_step: int = 30
-    switch_prob: float = 0.005
-    interrupt_vis_cfg: VisualizationMarkersCfg = VisualizationMarkersCfg(
-        markers={
-            "interrupt": sim_utils.SphereCfg(
-                radius=0.1,
-                visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 1.0, 0.0)),
-            ),
-            "no_interrupt": sim_utils.SphereCfg(
-                radius=0.1,
-                visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(1.0, 0.0, 0.0)),
-            ),
-        },
-        prim_path="/Visuals/Command/interrupt",
-    )

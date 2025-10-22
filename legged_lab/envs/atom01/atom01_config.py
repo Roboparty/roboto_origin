@@ -102,7 +102,7 @@ class ATOM01RewardCfg(RewardCfg):
     dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=-1.0)
     joint_deviation_hip = RewTerm(
         func=mdp.joint_deviation_l1,
-        weight=-0.06,
+        weight=-0.03,
         params={
             "asset_cfg": SceneEntityCfg(
                 "robot", joint_names=[".*_thigh_yaw.*", ".*_thigh_roll.*"]
@@ -139,7 +139,7 @@ class ATOM01RewardCfg(RewardCfg):
         params={"sensor_cfg": SceneEntityCfg("contact_sensor", body_names=[".*ankle_roll.*"])},
     )
     upward = RewTerm(func=mdp.upward, weight=0.4)
-    stand_still = RewTerm(func=mdp.stand_still, weight=-0.4, params={"pos_cfg": SceneEntityCfg("robot", joint_names=[".*_arm.*", ".*_elbow.*", ".*torso.*", ".*_thigh.*", ".*_knee.*", ".*_ankle.*"]),
+    stand_still = RewTerm(func=mdp.stand_still, weight=-0.2, params={"pos_cfg": SceneEntityCfg("robot", joint_names=[".*_arm.*", ".*_elbow.*", ".*torso.*", ".*_thigh.*", ".*_knee.*", ".*_ankle.*"]),
                                                                      "vel_cfg": SceneEntityCfg("robot", joint_names=[".*_arm.*", ".*_elbow.*", ".*torso.*", ".*_thigh.*", ".*_knee.*", ".*_ankle.*"]), 
                                                                      "pos_weight": 1.0, "vel_weight": 0.04})
     feet_height = RewTerm(
@@ -275,7 +275,7 @@ class ATOM01FlatEnvCfg(BaseEnvCfg):
         self.domain_rand.events.scale_actuator_gains.params["asset_cfg"].joint_names = [".*_joint"]
         self.domain_rand.events.scale_joint_parameters.params["asset_cfg"].joint_names = [".*_joint"]
         self.robot.action_scale = 0.25
-        self.domain_rand.action_delay.params["max_delay"] = 2
+        self.domain_rand.action_delay.params["max_delay"] = 4
         self.noise.noise_scales.joint_vel = 1.75
         self.noise.noise_scales.joint_pos = 0.03
 
