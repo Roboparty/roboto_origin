@@ -227,6 +227,7 @@ class DomainRandCfg:
 @configclass
 class PhysxCfg:
     gpu_max_rigid_patch_count: int = 10 * 2**15
+    gpu_collision_stack_size: int = 2**26
 
 
 @configclass
