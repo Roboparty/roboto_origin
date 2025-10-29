@@ -42,6 +42,7 @@ class HeightScannerCfg:
     size: tuple = (1.6, 1.0)
     debug_vis: bool = False
     drift_range: tuple = (0.0, 0.0)
+    offset: tuple = (0.0, 0.0, 20.0)
 
 
 @configclass
@@ -254,6 +255,7 @@ class BaseEnvCfg:
             size=(1.6, 1.0),
             debug_vis=False,
             drift_range=(0.0, 0.0),  # (0.3, 0.3)
+            offset=(0.0, 0.0, 20.0),
         ),
     )
     robot: RobotCfg = RobotCfg(
