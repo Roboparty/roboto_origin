@@ -104,13 +104,15 @@ def feet_air_time_positive_biped(env: BaseEnv, threshold: float, sensor_cfg: Sce
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
     air_time = contact_sensor.data.current_air_time[:, sensor_cfg.body_ids]
     is_contact = contact_sensor.data.net_forces_w_history[:, :, sensor_cfg.body_ids, :].norm(dim=-1).max(dim=1)[0] > 1.0
+    contact_time = contact_sensor.data.current_contact_time[:, sensor_cfg.body_ids]
+    in_mode_time = torch.where(is_contact, contact_time, air_time)
     single_stance = torch.sum(is_contact.int(), dim=1) == 1
-    reward = torch.sum(torch.where(torch.logical_and(~is_contact, single_stance.unsqueeze(-1)), air_time, 0.0), dim=1)
+    reward = torch.min(torch.where(single_stance.unsqueeze(-1), in_mode_time, 0.0), dim=1)[0]
     reward = torch.clamp(reward, min=0.0, max=threshold)
     # no reward for zero command
     reward *= (
         torch.norm(env.command_generator.command[:, :2], dim=1) + torch.abs(env.command_generator.command[:, 2])
-    ) > 0.01
+    ) > 0.05
     reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
     return reward
 
@@ -217,7 +219,7 @@ def stand_still(
     )
     vel_reward = vel_weight * torch.sum(torch.abs(asset.data.joint_vel[:, vel_cfg.joint_ids]), dim=1)
     reward = torch.where(
-        torch.logical_or(cmd > 0.01, body_vel > 0.5),
+        torch.logical_or(cmd > 0.05, body_vel > 0.5),
         0.0,
         pos_reward + vel_reward,
     )
@@ -254,7 +256,7 @@ def feet_height(env: BaseEnv, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntity
     reward = torch.where(torch.logical_and(~contacts, single_stance.unsqueeze(-1)), rew_pos.float(), 0.0).sum(dim=1)
     reward *= (
         torch.norm(env.command_generator.command[:, :2], dim=1) + torch.abs(env.command_generator.command[:, 2])
-    ) > 0.01
+    ) > 0.05
     reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
     return reward
 
@@ -295,7 +297,7 @@ def stand_still_interrupt(
                              vel_weight * torch.sum(torch.abs(asset.data.joint_vel[:, vel_joint_ids]), dim=1), 
                              vel_weight * torch.sum(torch.abs(asset.data.joint_vel[:, vel_cfg.joint_ids]), dim=1))
     reward = torch.where(
-        torch.logical_or(cmd > 0.01, body_vel > 0.5),
+        torch.logical_or(cmd > 0.05, body_vel > 0.5),
         0.0,
         pos_reward + vel_reward,
     )
