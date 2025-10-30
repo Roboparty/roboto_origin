@@ -21,6 +21,7 @@ from isaaclab_rl.rsl_rl import (  # noqa:F401
 )
 import torch
 import numpy as np
+from functools import lru_cache
 
 import legged_lab.mdp as mdp
 from legged_lab.assets.roboparty import ATOM01_CFG
@@ -42,8 +43,8 @@ from legged_lab.terrains import GRAVEL_TERRAINS_CFG, ROUGH_TERRAINS_CFG
 class ATOM01RewardCfg(RewardCfg):
     track_lin_vel_xy_exp = RewTerm(func=mdp.track_lin_vel_xy_yaw_frame_exp, weight=1.0, params={"std": 0.5})
     track_ang_vel_z_exp = RewTerm(func=mdp.track_ang_vel_z_world_exp, weight=1.0, params={"std": 0.5})
-    lin_vel_z_l2 = RewTerm(func=mdp.lin_vel_z_l2, weight=-0.05)
-    ang_vel_xy_l2 = RewTerm(func=mdp.ang_vel_xy_l2, weight=-0.05)
+    lin_vel_z_l2 = RewTerm(func=mdp.lin_vel_z_l2, weight=-0.2)
+    ang_vel_xy_l2 = RewTerm(func=mdp.ang_vel_xy_l2, weight=-0.1)
     energy = RewTerm(func=mdp.energy, weight=-1e-4)
     joint_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1e-5)
     joint_vel_l2 = RewTerm(func=mdp.joint_vel_l2, weight=-2e-4)
@@ -59,7 +60,7 @@ class ATOM01RewardCfg(RewardCfg):
     termination_penalty = RewTerm(func=mdp.is_terminated, weight=-200.0)
     feet_air_time = RewTerm(
         func=mdp.feet_air_time_positive_biped,
-        weight=0.5,
+        weight=0.25,
         params={"sensor_cfg": SceneEntityCfg("contact_sensor", body_names=".*ankle_roll.*"), "threshold": 0.4},
     )
     feet_slide = RewTerm(
@@ -151,12 +152,12 @@ class ATOM01RewardCfg(RewardCfg):
                 "sensor_cfg2": SceneEntityCfg("right_feet_scanner"),
                 "ankle_height":0.04,"threshold":0.02})
 
-def generate_height_scan_mirror(start_idx=140, rows=17, cols=11):
+def generate_height_scan_mirror(start_idx=140, rows=11, cols=17):
     mirror_indices = []
     for row in range(rows):
         for col in range(cols):
             mirror_col = cols - 1 - col
-            mirror_idx = start_idx + row * cols + mirror_col
+            mirror_idx = start_idx + row + mirror_col * rows
             mirror_indices.append(mirror_idx)
     mirror_signs = [1] * (rows * cols)
     return mirror_indices, mirror_signs
@@ -190,7 +191,7 @@ critic_obs_mirror_indices = policy_obs_mirror_indices +\
                              92, 91]\
                             + joint_acc_mirror_indices + joint_torques_mirror_indices +\
                             [139]
-height_scan_mirror_indices, height_scan_mirror_signs = generate_height_scan_mirror(140, 17, 11)
+height_scan_mirror_indices, height_scan_mirror_signs = generate_height_scan_mirror(140, 11, 17)
 critic_obs_mirror_indices += height_scan_mirror_indices
 critic_obs_mirror_signs = policy_obs_mirror_signs +\
                            [1, -1, 1,\
@@ -217,26 +218,34 @@ for i in range(10):
         critic_obs_mirror_indices_expanded.append(idx + offset)
 critic_obs_mirror_signs_expanded = critic_obs_mirror_signs * 10
 
+@lru_cache(maxsize=None)
+def get_policy_obs_mirror_signs_tensor(device, dtype):
+    return torch.tensor(policy_obs_mirror_signs_expanded, device=device, dtype=dtype)
+
 def mirror_policy_observation(policy_obs):
     mirrored_policy_obs = policy_obs[..., policy_obs_mirror_indices_expanded]
-    policy_obs_mirror_signs_tensor_expanded = torch.tensor(policy_obs_mirror_signs_expanded, 
-                                                           dtype=policy_obs.dtype, 
-                                                           device=policy_obs.device)
-    mirrored_policy_obs = mirrored_policy_obs * policy_obs_mirror_signs_tensor_expanded
+    signs = get_policy_obs_mirror_signs_tensor(device=policy_obs.device, dtype=policy_obs.dtype)
+    mirrored_policy_obs = mirrored_policy_obs * signs
     return mirrored_policy_obs
+
+@lru_cache(maxsize=None)
+def get_critic_obs_mirror_signs_tensor(device, dtype):
+    return torch.tensor(critic_obs_mirror_signs_expanded, device=device, dtype=dtype)
 
 def mirror_critic_observation(critic_obs):
     mirrored_critic_obs = critic_obs[..., critic_obs_mirror_indices_expanded]
-    critic_obs_mirror_signs_tensor_expanded = torch.tensor(critic_obs_mirror_signs_expanded, 
-                                                           dtype=critic_obs.dtype, 
-                                                           device=critic_obs.device)
-    mirrored_critic_obs = mirrored_critic_obs * critic_obs_mirror_signs_tensor_expanded
+    signs = get_critic_obs_mirror_signs_tensor(device=critic_obs.device, dtype=critic_obs.dtype)
+    mirrored_critic_obs = mirrored_critic_obs * signs
     return mirrored_critic_obs
+
+@lru_cache(maxsize=None)
+def get_act_mirror_signs_tensor(device, dtype):
+    return torch.tensor(act_mirror_signs, device=device, dtype=dtype)
 
 def mirror_actions(actions):
     mirrored_actions = actions[..., act_mirror_indices]
-    act_mirror_signs_tensor = torch.tensor(act_mirror_signs, dtype=actions.dtype, device=actions.device)
-    mirrored_actions = mirrored_actions * act_mirror_signs_tensor
+    signs = get_act_mirror_signs_tensor(device=actions.device, dtype=actions.dtype)
+    mirrored_actions = mirrored_actions * signs
     return mirrored_actions
 
 def data_augmentation_func(env, obs, actions, obs_type):
@@ -266,7 +275,7 @@ class ATOM01FlatEnvCfg(BaseEnvCfg):
         self.scene.robot = ATOM01_CFG
         self.scene.terrain_type = "generator"
         self.scene.terrain_generator = GRAVEL_TERRAINS_CFG
-        self.scene.height_scanner.enable_height_scan = True
+        self.scene.height_scanner.enable_height_scan = False
         self.robot.terminate_contacts_body_names = ["torso_link", ".*_thigh_yaw_link", ".*_thigh_roll_link"]
         self.robot.feet_body_names = [".*ankle_roll.*"]
         self.domain_rand.events.add_base_mass.params["asset_cfg"].body_names = ["torso_link", "base_link"]
@@ -318,9 +327,31 @@ class ATOM01RoughEnvCfg(ATOM01FlatEnvCfg):
         super().__post_init__()
         self.scene.height_scanner.enable_height_scan = True
         self.scene.terrain_generator = ROUGH_TERRAINS_CFG
-        self.reward.track_lin_vel_xy_exp.weight = 1.0
-        self.reward.track_ang_vel_z_exp.weight = 1.0
-        self.reward.lin_vel_z_l2.weight = -0.1
+        self.reward.ang_vel_xy_l2.weight = -0.05
+        self.reward.lin_vel_z_l2.weight = -0.05
+        self.algorithm = RslRlPpoAlgorithmCfg(
+            class_name="PPO",
+            value_loss_coef=1.0,
+            use_clipped_value_loss=True,
+            clip_param=0.2,
+            entropy_coef=0.005,
+            num_learning_epochs=5,
+            num_mini_batches=4,
+            learning_rate=1.0e-3,
+            schedule="adaptive",
+            gamma=0.99,
+            lam=0.95,
+            desired_kl=0.01,
+            max_grad_norm=1.0,
+            normalize_advantage_per_mini_batch=False,
+            symmetry_cfg=RslRlSymmetryCfg(
+                use_data_augmentation=True, 
+                use_mirror_loss=True,
+                mirror_loss_coeff=0.2, 
+                data_augmentation_func=data_augmentation_func
+            ),
+            rnd_cfg=None,  # RslRlRndCfg()
+        )
 
 
 @configclass
