@@ -158,9 +158,9 @@ class ATOM01RewardCfg(RewardCfg):
 def generate_height_scan_mirror(start_idx=140, rows=11, cols=17):
     mirror_indices = []
     for row in range(rows):
+        mirror_row = rows - 1 - row
         for col in range(cols):
-            mirror_col = cols - 1 - col
-            mirror_idx = start_idx + row + mirror_col * rows
+            mirror_idx = start_idx + col + mirror_row * cols
             mirror_indices.append(mirror_idx)
     mirror_signs = [1] * (rows * cols)
     return mirror_indices, mirror_signs
