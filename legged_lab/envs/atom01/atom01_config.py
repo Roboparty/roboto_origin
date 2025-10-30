@@ -329,6 +329,14 @@ class ATOM01RoughEnvCfg(ATOM01FlatEnvCfg):
         self.scene.terrain_generator = ROUGH_TERRAINS_CFG
         self.reward.ang_vel_xy_l2.weight = -0.05
         self.reward.lin_vel_z_l2.weight = -0.05
+
+
+@configclass
+class ATOM01RoughAgentCfg(ATOM01FlatAgentCfg):
+    def __post_init__(self):
+        super().__post_init__()
+        self.experiment_name: str = "atom01_rough"
+        self.wandb_project: str = "atom01_rough"
         self.algorithm = RslRlPpoAlgorithmCfg(
             class_name="PPO",
             value_loss_coef=1.0,
@@ -352,11 +360,3 @@ class ATOM01RoughEnvCfg(ATOM01FlatEnvCfg):
             ),
             rnd_cfg=None,  # RslRlRndCfg()
         )
-
-
-@configclass
-class ATOM01RoughAgentCfg(ATOM01FlatAgentCfg):
-    def __post_init__(self):
-        super().__post_init__()
-        self.experiment_name: str = "atom01_rough"
-        self.wandb_project: str = "atom01_rough"

@@ -196,7 +196,6 @@ critic_obs_mirror_indices = policy_obs_mirror_indices +\
                             + joint_acc_mirror_indices + joint_torques_mirror_indices +\
                             [139]
 height_scan_mirror_indices, height_scan_mirror_signs = generate_height_scan_mirror(140, 11, 17)
-critic_obs_mirror_indices += height_scan_mirror_indices
 critic_obs_mirror_signs = policy_obs_mirror_signs +\
                            [1, 1,\
                             1, -1, 1, 1, -1, 1,\
@@ -415,7 +414,12 @@ class ATOM01AttnEncStage2AgentCfg(BaseAgentCfg):
             velocity_slice=slice(78, 81),
             velocity_loss_coef=0.1,
             normalize_advantage_per_mini_batch=False,
-            symmetry_cfg=None,
+            symmetry_cfg=RslRlSymmetryCfg(
+                use_data_augmentation=True, 
+                use_mirror_loss=True,
+                mirror_loss_coeff=0.2, 
+                data_augmentation_func=data_augmentation_func
+            ),
             rnd_cfg=None,  # RslRlRndCfg()
         )
         self.clip_actions = 100.0
