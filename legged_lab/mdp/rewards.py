@@ -248,7 +248,7 @@ def feet_height(env: BaseEnv, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntity
         dim=-1,
     )
     feet_height = torch.clamp(feet_height - ankle_height, min=0.0, max=1.0)
-    feet_height = torch.nan_to_num(feet_height, nan=0, posinf=1.0, neginf=0)
+    feet_height = torch.nan_to_num(feet_height, nan=1.0, posinf=1.0, neginf=0)
     # Compute single_stance mask
     single_stance = contacts.sum(dim=1) == 1
     # feet height should be closed to target feet height at the peak
@@ -302,4 +302,15 @@ def stand_still_interrupt(
         pos_reward + vel_reward,
     )
     reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
+    return reward
+
+def action_penalty_interrupt(env: BaseEnv, asset_cfg: SceneEntityCfg) -> torch.Tensor:
+    """Penalize action magnitude during interruption."""
+    reward = torch.sum(
+        torch.square(
+            env.action_buffer._circular_buffer.buffer[:, -1, asset_cfg.joint_ids]
+        ),
+        dim=1,
+    )
+    reward *= env.interrupt_mask
     return reward
