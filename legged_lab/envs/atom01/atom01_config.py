@@ -284,7 +284,9 @@ class ATOM01FlatEnvCfg(BaseEnvCfg):
         self.domain_rand.events.scale_actuator_gains.params["asset_cfg"].joint_names = [".*_joint"]
         self.domain_rand.events.scale_joint_parameters.params["asset_cfg"].joint_names = [".*_joint"]
         self.robot.action_scale = 0.25
-        self.domain_rand.action_delay.params["max_delay"] = 4
+        self.domain_rand.action_delay.params["max_delay"] = 5
+        self.domain_rand.action_delay.params["min_delay"] = 3
+        self.domain_rand.action_delay.enable = True
         self.noise.noise_scales.joint_vel = 1.75
         self.noise.noise_scales.joint_pos = 0.03
 
@@ -327,6 +329,7 @@ class ATOM01RoughEnvCfg(ATOM01FlatEnvCfg):
         super().__post_init__()
         self.scene.height_scanner.enable_height_scan = True
         self.scene.terrain_generator = ROUGH_TERRAINS_CFG
+        self.sim.physx.gpu_collision_stack_size = 2**29
         self.reward.ang_vel_xy_l2.weight = -0.05
         self.reward.lin_vel_z_l2.weight = -0.05
 

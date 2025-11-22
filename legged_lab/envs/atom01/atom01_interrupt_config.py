@@ -158,6 +158,7 @@ class ATOM01RewardCfg(RewardCfg):
                 "sensor_cfg1": SceneEntityCfg("left_feet_scanner"),
                 "sensor_cfg2": SceneEntityCfg("right_feet_scanner"),
                 "ankle_height":0.04,"threshold":0.02})
+    action_penalty = RewTerm(func=mdp.action_penalty_interrupt, weight=-0.1, params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_arm.*", ".*_elbow_pitch.*"])})
 
 
 def generate_joint_mirror(start_idx):
@@ -306,11 +307,11 @@ class ATOM01InterruptEnvCfg(BaseEnvCfg):
         ],
     interrupt_scale = [
             3.14, # Arm Pitch -1.57~1.57
-            1.25, # Arm Roll, -0.25~1.0
+            1.82, # Arm Roll, -0.25~1.57
             3.14, # Arm Yaw,  -1.57~1.57
             2.07, # Elbow Pitch, -0.5~1.57
             3.14, # Arm Pitch -1.57~1.57
-            1.25, # Arm Roll, -1.0~0.25
+            1.82, # Arm Roll, -1.57~0.25
             3.14, # Arm Yaw,  -1.57~1.57
             2.07, # Elbow Pitch, -0.5~1.57
         ], # Uniform Distribution Noise for each joint.
@@ -320,7 +321,7 @@ class ATOM01InterruptEnvCfg(BaseEnvCfg):
             -1.57, 
             -0.5, 
             -1.57, 
-            -1.0, 
+            -1.57, 
             -1.57,
             -0.5,
         ],
@@ -356,7 +357,9 @@ class ATOM01InterruptEnvCfg(BaseEnvCfg):
         self.domain_rand.events.scale_actuator_gains.params["asset_cfg"].joint_names = [".*_joint"]
         self.domain_rand.events.scale_joint_parameters.params["asset_cfg"].joint_names = [".*_joint"]
         self.robot.action_scale = 0.25
-        self.domain_rand.action_delay.params["max_delay"] = 4
+        self.domain_rand.action_delay.params["max_delay"] = 5
+        self.domain_rand.action_delay.params["min_delay"] = 3
+        self.domain_rand.action_delay.enable = True
         self.noise.noise_scales.joint_vel = 1.75
         self.noise.noise_scales.joint_pos = 0.03
 
