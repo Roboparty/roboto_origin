@@ -145,7 +145,7 @@ class ATOM01RewardCfg(RewardCfg):
     upward = RewTerm(func=mdp.upward, weight=0.4)
     stand_still = RewTerm(func=mdp.stand_still, weight=-0.2, params={"pos_cfg": SceneEntityCfg("robot", joint_names=[".*_arm.*", ".*_elbow.*", ".*torso.*", ".*_thigh.*", ".*_knee.*", ".*_ankle.*"]),
                                                                      "vel_cfg": SceneEntityCfg("robot", joint_names=[".*_arm.*", ".*_elbow.*", ".*torso.*", ".*_thigh.*", ".*_knee.*", ".*_ankle.*"]), 
-                                                                     "pos_weight": 1.0, "vel_weight": 0.04})
+                                                                     "pos_weight": 0.0, "vel_weight": 0.04})
     feet_height = RewTerm(
         func=mdp.feet_height,
         weight=0.2,
@@ -174,30 +174,76 @@ def generate_joint_mirror(start_idx):
     mirror_signs = [-1, -1, -1, -1, -1, 1, 1, 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, 1, 1, -1, -1, -1, -1]
     return mirror_indices, mirror_signs
 
-joint_pos_mirror_indices, joint_pos_mirror_signs = generate_joint_mirror(12)
-joint_vel_mirror_indices, joint_vel_mirror_signs = generate_joint_mirror(35)
-action_mirror_indices, action_mirror_signs = generate_joint_mirror(58)
+# joint_pos_mirror_indices, joint_pos_mirror_signs = generate_joint_mirror(12)
+# joint_vel_mirror_indices, joint_vel_mirror_signs = generate_joint_mirror(35)
+# action_mirror_indices, action_mirror_signs = generate_joint_mirror(58)
+# policy_obs_mirror_indices = [0, 1, 2,\
+#                              3, 4, 5,\
+#                              6, 7, 8,\
+#                              9, 10, 11]\
+#                             + joint_pos_mirror_indices + joint_vel_mirror_indices + action_mirror_indices
+# policy_obs_mirror_signs = [-1, 1, -1,\
+#                            1, -1, 1,\
+#                            1, -1, 1,\
+#                            1, -1, -1] + joint_pos_mirror_signs + joint_vel_mirror_signs + action_mirror_signs
+# joint_acc_mirror_indices, joint_acc_mirror_signs = generate_joint_mirror(93)
+# joint_torques_mirror_indices, joint_torques_mirror_signs = generate_joint_mirror(116)
+# critic_obs_mirror_indices = policy_obs_mirror_indices +\
+#                             [82, 81,\
+#                              86, 87, 88, 83, 84, 85,\
+#                              90, 89,\
+#                              92, 91]\
+#                             + joint_acc_mirror_indices + joint_torques_mirror_indices +\
+#                             [139]
+# height_scan_mirror_indices, height_scan_mirror_signs = generate_height_scan_mirror(140, 11, 17)
+# critic_obs_mirror_signs = policy_obs_mirror_signs +\
+#                            [1, 1,\
+#                             1, -1, 1, 1, -1, 1,\
+#                             1, 1,\
+#                             1, 1]\
+#                             + joint_acc_mirror_signs + joint_torques_mirror_signs +\
+#                             [1]
+# act_mirror_indices = [1, 0, 2, 4, 3, 6, 5, 8, 7, 10, 9, 12, 11, 14, 13, 16, 15, 18, 17, 20, 19, 22, 21]
+# act_mirror_signs = [-1, -1, -1, -1, -1, 1, 1, 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, 1, 1, -1, -1, -1, -1]
+map_scan_mirror_indices, map_scan_mirror_signs = generate_height_scan_mirror(0, 11, 17)
+
+# policy_obs_mirror_indices_expanded = []
+# for i in range(1):
+#     offset = i * 81
+#     for idx in policy_obs_mirror_indices:
+#         policy_obs_mirror_indices_expanded.append(idx + offset)
+# policy_obs_mirror_signs_expanded = policy_obs_mirror_signs * 1
+
+# critic_obs_mirror_indices_expanded = []
+# for i in range(1):
+#     offset = i * 140
+#     for idx in critic_obs_mirror_indices:
+#         critic_obs_mirror_indices_expanded.append(idx + offset)
+# critic_obs_mirror_signs_expanded = critic_obs_mirror_signs * 1
+
+joint_pos_mirror_indices, joint_pos_mirror_signs = generate_joint_mirror(9)
+joint_vel_mirror_indices, joint_vel_mirror_signs = generate_joint_mirror(32)
+action_mirror_indices, action_mirror_signs = generate_joint_mirror(55)
 policy_obs_mirror_indices = [0, 1, 2,\
                              3, 4, 5,\
-                             6, 7, 8,\
-                             9, 10, 11]\
+                             6, 7, 8]\
                             + joint_pos_mirror_indices + joint_vel_mirror_indices + action_mirror_indices
 policy_obs_mirror_signs = [-1, 1, -1,\
-                           1, -1, 1,\
                            1, -1, 1,\
                            1, -1, -1] + joint_pos_mirror_signs + joint_vel_mirror_signs + action_mirror_signs
 joint_acc_mirror_indices, joint_acc_mirror_signs = generate_joint_mirror(93)
 joint_torques_mirror_indices, joint_torques_mirror_signs = generate_joint_mirror(116)
 critic_obs_mirror_indices = policy_obs_mirror_indices +\
-                            [82, 81,\
+                            [78, 79, 80,\
+                             82, 81,\
                              86, 87, 88, 83, 84, 85,\
                              90, 89,\
                              92, 91]\
                             + joint_acc_mirror_indices + joint_torques_mirror_indices +\
                             [139]
-height_scan_mirror_indices, height_scan_mirror_signs = generate_height_scan_mirror(140, 11, 17)
 critic_obs_mirror_signs = policy_obs_mirror_signs +\
-                           [1, 1,\
+                           [1, -1, 1,\
+                            1, 1,\
                             1, -1, 1, 1, -1, 1,\
                             1, 1,\
                             1, 1]\
@@ -205,14 +251,12 @@ critic_obs_mirror_signs = policy_obs_mirror_signs +\
                             [1]
 act_mirror_indices = [1, 0, 2, 4, 3, 6, 5, 8, 7, 10, 9, 12, 11, 14, 13, 16, 15, 18, 17, 20, 19, 22, 21]
 act_mirror_signs = [-1, -1, -1, -1, -1, 1, 1, 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, 1, 1, -1, -1, -1, -1]
-map_scan_mirror_indices, map_scan_mirror_signs = generate_height_scan_mirror(0, 11, 17)
-
 policy_obs_mirror_indices_expanded = []
-for i in range(1):
-    offset = i * 81
+for i in range(5):
+    offset = i * 78
     for idx in policy_obs_mirror_indices:
         policy_obs_mirror_indices_expanded.append(idx + offset)
-policy_obs_mirror_signs_expanded = policy_obs_mirror_signs * 1
+policy_obs_mirror_signs_expanded = policy_obs_mirror_signs * 5
 
 critic_obs_mirror_indices_expanded = []
 for i in range(1):
@@ -303,7 +347,7 @@ class ATOM01AttnEncStage2EnvCfg(BaseEnvCfg):
     reward = ATOM01RewardCfg()
     attn_enc = AttnEncCfg(
             use_attn_enc=True,
-            vel_in_obs=True,
+            vel_in_obs=False,
             critic_encoder=True,
         )
 
@@ -315,8 +359,8 @@ class ATOM01AttnEncStage2EnvCfg(BaseEnvCfg):
         self.scene.terrain_generator = ROUGH_HARD_TERRAINS_CFG
         self.scene.height_scanner.enable_height_scan = True
         self.scene.height_scanner.enable_height_scan_actor = True
-        self.scene.height_scanner.resolution = 0.08
-        self.scene.height_scanner.size = (1.28, 0.8)
+        self.scene.height_scanner.resolution = 0.1
+        self.scene.height_scanner.size = (1.6, 1.0)
         self.robot.terminate_contacts_body_names = ["torso_link", ".*_thigh_yaw_link", ".*_thigh_roll_link", ".*_elbow_.*_link", ".*_arm_.*_link"]
         self.robot.feet_body_names = [".*ankle_roll.*"]
         self.noise.add_noise = True
@@ -326,9 +370,11 @@ class ATOM01AttnEncStage2EnvCfg(BaseEnvCfg):
         self.domain_rand.events.scale_actuator_gains.params["asset_cfg"].joint_names = [".*_joint"]
         self.domain_rand.events.scale_joint_parameters.params["asset_cfg"].joint_names = [".*_joint"]
         self.robot.action_scale = 0.25
-        self.robot.actor_obs_history_length = 1
+        self.robot.actor_obs_history_length = 5
         self.robot.critic_obs_history_length = 1
-        self.domain_rand.action_delay.params["max_delay"] = 4
+        self.domain_rand.action_delay.params["max_delay"] = 5
+        self.domain_rand.action_delay.params["min_delay"] = 3
+        self.domain_rand.action_delay.enable = True
         self.normalization.height_scan_offset = 0.75
         self.sim.physx.gpu_collision_stack_size = 2**29
         self.noise.noise_scales.joint_vel = 1.75
@@ -343,13 +389,9 @@ class ATOM01AttnEncStage1EnvCfg(ATOM01AttnEncStage2EnvCfg):
     def __post_init__(self):
         super().__post_init__()
         self.noise.add_noise = False
-        self.domain_rand.events.add_base_mass = None
-        self.domain_rand.events.randomize_rigid_body_com = None
-        self.domain_rand.events.scale_link_mass = None
-        self.domain_rand.events.scale_actuator_gains = None
-        self.domain_rand.events.scale_joint_parameters = None
+        self.domain_rand.action_delay.params["max_delay"] = 4
+        self.domain_rand.action_delay.enable = False
         self.domain_rand.events.push_robot = None
-        self.commands.ranges.lin_vel_x = (0.0, 1.0)
 
 
 @configclass
@@ -357,7 +399,7 @@ class RslRlPpoEncActorCriticCfg(RslRlPpoActorCriticCfg):
     embedding_dim:int = 64
     head_num:int = 8
     map_size:tuple = (17, 11)
-    map_resolution:float = 0.08
+    map_resolution:float = 0.1
     single_obs_dim:int = 78
     velocity_estimation:bool = False
     critic_encoder:bool = False
@@ -377,7 +419,7 @@ class ATOM01AttnEncStage2AgentCfg(BaseAgentCfg):
         self.wandb_project: str = "atom01_attn_enc"
         self.seed = 42
         self.num_steps_per_env = 24
-        self.max_iterations = 9001
+        self.max_iterations = 3001
         self.save_interval = 1000
         self.runner_class_name = "AttnEncOnPolicyRunner"
         self.empirical_normalization = True
@@ -391,9 +433,9 @@ class ATOM01AttnEncStage2AgentCfg(BaseAgentCfg):
             embedding_dim=64,
             head_num=8,
             map_size=(17, 11),
-            map_resolution=0.08,
+            map_resolution=0.1,
             single_obs_dim=81,
-            velocity_estimation=False,
+            velocity_estimation=True,
             critic_encoder=True,
         )
         self.algorithm = RslRlPpoEncAlgorithmCfg(
@@ -410,9 +452,9 @@ class ATOM01AttnEncStage2AgentCfg(BaseAgentCfg):
             lam=0.95,
             desired_kl=0.01,
             max_grad_norm=1.0,
-            velocity_estimation=False,
+            velocity_estimation=True,
             velocity_slice=slice(78, 81),
-            velocity_loss_coef=0.1,
+            velocity_loss_coef=0.01,
             normalize_advantage_per_mini_batch=False,
             symmetry_cfg=RslRlSymmetryCfg(
                 use_data_augmentation=True, 
@@ -429,3 +471,4 @@ class ATOM01AttnEncStage2AgentCfg(BaseAgentCfg):
 class ATOM01AttnEncStage1AgentCfg(ATOM01AttnEncStage2AgentCfg):
     def __post_init__(self):
         super().__post_init__()
+        self.max_iterations = 9001
