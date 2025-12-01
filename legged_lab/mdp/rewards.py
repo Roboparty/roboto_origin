@@ -112,7 +112,7 @@ def feet_air_time_positive_biped(env: BaseEnv, threshold: float, sensor_cfg: Sce
     # no reward for zero command
     reward *= (
         torch.norm(env.command_generator.command[:, :2], dim=1) + torch.abs(env.command_generator.command[:, 2])
-    ) > 0.05
+    ) > 0.01
     reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
     return reward
 
@@ -189,6 +189,28 @@ def feet_contact_without_cmd(env: BaseEnv, sensor_cfg: SceneEntityCfg) -> torch.
     reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
     return reward
 
+def undesired_foothold(env: BaseEnv, sensor_cfg: SceneEntityCfg, sensor_cfg1: SceneEntityCfg | None = None,
+    sensor_cfg2: SceneEntityCfg | None = None, ankle_height: float = 0.035) -> torch.Tensor:
+    """Reward feet contact"""
+    # extract the used quantities (to enable type-hinting)
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+    # compute the reward
+    contacts = contact_sensor.data.net_forces_w_history[:, :, sensor_cfg.body_ids, :].norm(dim=-1).max(dim=1)[0] > 1.0
+    undesired_contacts = torch.stack(
+        [
+            torch.sum(
+                (env.scene[sensor.name].data.pos_w[:, 2].unsqueeze(1)
+                - env.scene[sensor.name].data.ray_hits_w[..., 2]
+                - ankle_height) > 0.01,
+                dim=-1
+            ) / float(env.scene[sensor.name].data.ray_hits_w.shape[1])
+            for sensor in [sensor_cfg1, sensor_cfg2]
+            if sensor is not None
+        ],
+        dim=-1,
+    )
+    reward = torch.where(contacts, undesired_contacts, 0.0)
+    return reward.sum(dim=1)
 
 def upward(env: BaseEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
     """Penalize z-axis base linear velocity using L2 squared kernel."""
@@ -219,7 +241,7 @@ def stand_still(
     )
     vel_reward = vel_weight * torch.sum(torch.abs(asset.data.joint_vel[:, vel_cfg.joint_ids]), dim=1)
     reward = torch.where(
-        torch.logical_or(cmd > 0.05, body_vel > 0.5),
+        torch.logical_or(cmd > 0.01, body_vel > 0.5),
         0.0,
         pos_reward + vel_reward,
     )
@@ -256,7 +278,7 @@ def feet_height(env: BaseEnv, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntity
     reward = torch.where(torch.logical_and(~contacts, single_stance.unsqueeze(-1)), rew_pos.float(), 0.0).sum(dim=1)
     reward *= (
         torch.norm(env.command_generator.command[:, :2], dim=1) + torch.abs(env.command_generator.command[:, 2])
-    ) > 0.05
+    ) > 0.01
     reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
     return reward
 
@@ -297,7 +319,7 @@ def stand_still_interrupt(
                              vel_weight * torch.sum(torch.abs(asset.data.joint_vel[:, vel_joint_ids]), dim=1), 
                              vel_weight * torch.sum(torch.abs(asset.data.joint_vel[:, vel_cfg.joint_ids]), dim=1))
     reward = torch.where(
-        torch.logical_or(cmd > 0.05, body_vel > 0.5),
+        torch.logical_or(cmd > 0.01, body_vel > 0.5),
         0.0,
         pos_reward + vel_reward,
     )
