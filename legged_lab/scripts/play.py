@@ -48,6 +48,106 @@ from isaaclab.markers import VisualizationMarkers
 from legged_lab.envs import *  # noqa:F401, F403
 from legged_lab.utils.cli_args import update_rsl_rl_cfg
 
+import copy
+
+class TorchAttnEncPolicyExporter(torch.nn.Module):
+    """Exporter of actor-critic into JIT file."""
+
+    def __init__(self, policy, normalizer=None):
+        super().__init__()
+        # copy policy parameters
+        self.actor = copy.deepcopy(policy.actor)
+        self.encoder = copy.deepcopy(policy.encoder)
+        self.num_actor_obs = policy.num_actor_obs
+        self.velocity_estimation = policy.velocity_estimation
+        self.single_obs_dim = policy.single_obs_dim
+        if self.velocity_estimation:
+            self.estimator = copy.deepcopy(policy.estimator)
+        # copy normalizer if exists
+        if normalizer:
+            self.normalizer = copy.deepcopy(normalizer)
+        else:
+            self.normalizer = torch.nn.Identity()
+
+    def forward(self, x):
+        prop_obs = self.normalizer(x[:, :self.num_actor_obs])
+        perception_obs = x[:, self.num_actor_obs:]
+        if self.velocity_estimation:
+            velocity = self.estimator(prop_obs)
+            obs = torch.cat([prop_obs[:, -self.single_obs_dim:], velocity], dim=1) 
+            embedding, attention = self.encoder(perception_obs, obs, embedding_only=False)
+        else:
+            embedding, attention = self.encoder(perception_obs, prop_obs[:, -self.single_obs_dim:], embedding_only=True)
+            embedding = torch.cat([embedding, prop_obs], dim=-1)
+        return self.actor(embedding)
+
+    @torch.jit.export
+    def reset(self):
+        pass
+
+    def reset_memory(self):
+        self.hidden_state[:] = 0.0
+        if hasattr(self, "cell_state"):
+            self.cell_state[:] = 0.0
+
+    def export(self, path, filename):
+        os.makedirs(path, exist_ok=True)
+        path = os.path.join(path, filename)
+        self.to("cpu")
+        traced_script_module = torch.jit.script(self)
+        traced_script_module.save(path)
+
+
+class OnnxAttnEncPolicyExporter(torch.nn.Module):
+    """Exporter of actor-critic into ONNX file."""
+
+    def __init__(self, policy, normalizer=None, verbose=False):
+        super().__init__()
+        self.verbose = verbose
+        # copy policy parameters
+        self.actor = copy.deepcopy(policy.actor)
+        self.encoder = copy.deepcopy(policy.encoder)
+        self.num_actor_obs = policy.num_actor_obs
+        self.velocity_estimation = policy.velocity_estimation
+        self.single_obs_dim = policy.single_obs_dim
+        self.map_size = policy.map_size
+        if self.velocity_estimation:
+            self.estimator = copy.deepcopy(policy.estimator)
+        # copy normalizer if exists
+        if normalizer:
+            self.normalizer = copy.deepcopy(normalizer)
+        else:
+            self.normalizer = torch.nn.Identity()
+
+    def forward(self, x):
+        prop_obs = self.normalizer(x[:, :self.num_actor_obs])
+        perception_obs = x[:, self.num_actor_obs:]
+        if self.velocity_estimation:
+            velocity = self.estimator(prop_obs)
+            obs = torch.cat([prop_obs[:, -self.single_obs_dim:], velocity], dim=1) 
+            embedding, attention = self.encoder(perception_obs, obs, embedding_only=False)
+        else:
+            embedding, attention = self.encoder(perception_obs, prop_obs[:, -self.single_obs_dim:], embedding_only=True)
+            embedding = torch.cat([embedding, prop_obs], dim=-1)
+        return self.actor(embedding)
+
+    def export(self, path, filename):
+        self.to("cpu")
+        self.eval()
+        opset_version = 18  # was 11, but it caused problems with linux-aarch, and 18 worked well across all systems.
+        obs = torch.zeros(1, self.num_actor_obs + self.map_size[0]*self.map_size[1])
+        torch.onnx.export(
+            self,
+            obs,
+            os.path.join(path, filename),
+            export_params=True,
+            opset_version=opset_version,
+            verbose=self.verbose,
+            input_names=["obs"],
+            output_names=["actions"],
+            dynamic_axes={},
+        )
+
 def visualize_attention(map_scan, root_pose, output_attn, visualizer):
     root_pos = root_pose[:, :3]  # shape (B, 3)
     map_scan_world = -map_scan + root_pos.unsqueeze(1).unsqueeze(1)  # shape (B, W, L, 3)
@@ -84,9 +184,9 @@ def play():
         env_cfg.commands.heading_command=False
         env_cfg.commands.rel_standing_envs = 0.0
         kbd_control = Se2Keyboard(
-            v_x_sensitivity=0.6, 
-            v_y_sensitivity=0.3, 
-            omega_z_sensitivity=0.8
+            v_x_sensitivity=0.8, 
+            v_y_sensitivity=0.4, 
+            omega_z_sensitivity=1.0
         )
     else:
         env_cfg.commands.ranges.lin_vel_x = (0.6, 0.6)
@@ -132,10 +232,15 @@ def play():
 
     policy = runner.get_inference_policy(device=env.device)
 
+    export_model_dir = os.path.join(os.path.dirname(resume_path), "exported")
+    if not os.path.exists(export_model_dir):
+        os.makedirs(export_model_dir, exist_ok=True)
     if hasattr(env_cfg, "attn_enc"):
-        pass
+        torch_policy_exporter = TorchAttnEncPolicyExporter(runner.alg.policy, runner.obs_normalizer)
+        torch_policy_exporter.export(path=export_model_dir, filename="policy.pt")
+        onnx_policy_exporter = OnnxAttnEncPolicyExporter(runner.alg.policy, runner.obs_normalizer, verbose=False)
+        onnx_policy_exporter.export(path=export_model_dir, filename="policy.onnx")
     else:
-        export_model_dir = os.path.join(os.path.dirname(resume_path), "exported")
         export_policy_as_jit(runner.alg.policy, runner.obs_normalizer, path=export_model_dir, filename="policy.pt")
         export_policy_as_onnx(
             runner.alg.policy, normalizer=runner.obs_normalizer, path=export_model_dir, filename="policy.onnx"
@@ -160,7 +265,10 @@ def play():
 
             if hasattr(env_cfg, "attn_enc"):
                 perception_obs = extras["observations"]["perception"]
-                actions, output_attn = policy(perception_obs, obs)
+                if agent_cfg.policy.velocity_estimation:
+                    actions, output_attn, velocity = policy(perception_obs, obs)
+                else: 
+                    actions, output_attn = policy(perception_obs, obs)
                 height_scan = (
                     env.height_scanner.data.pos_w[:, :3].unsqueeze(1) - env.height_scanner.data.ray_hits_w[..., :3]
                 )
@@ -171,8 +279,9 @@ def play():
                 W = grid_shape[1]
                 B = height_scan.shape[0]
                 height_scan = height_scan.view(B, W, L, 3)
-                height_scan[..., 2] = torch.clamp(height_scan[..., 2] - env_cfg.normalization.height_scan_offset, min=-1.0, max=1.0)
-                height_scan = torch.nan_to_num(height_scan, nan=0, posinf=1.0, neginf=-1.0)
+                height_scan[..., 2] = torch.clamp(height_scan[..., 2], min=-1.0+env.cfg.normalization.height_scan_offset, max=1.0+env.cfg.normalization.height_scan_offset)
+                height_scan[..., :2] = torch.nan_to_num(height_scan[..., :2], nan=0.0, posinf=0.0, neginf=-0.0)
+                height_scan[..., 2] = torch.nan_to_num(height_scan[..., 2], nan=1.0+env.cfg.normalization.height_scan_offset, posinf=1.0+env.cfg.normalization.height_scan_offset, neginf=-1.0+env.cfg.normalization.height_scan_offset)
                 root_pose = env.robot.data.root_pos_w
                 visualize_attention(height_scan, root_pose, output_attn, visualizer)
             else:
