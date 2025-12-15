@@ -65,14 +65,14 @@
     <mesh name="right_elbow_pitch_link"  file="right_elbow_pitch_link.STL"/>
     <mesh name="right_elbow_yaw_link"  file="right_elbow_yaw_link.STL"/>
 
-    <hfield name='hf0' nrow='200' ncol='200' size="10 5 0.2 .1"/>
+    <hfield name='terrain_hfield' file="../terrain_assets/terrain_hfield.png" size="10.0 10.0 3.4 2.0"/>
   </asset>
   <worldbody>
     <light directional="true" diffuse=".4 .4 .4" specular="0.1 0.1 0.1" pos="0 0 5.0" dir="0 0 -1" castshadow="false"/>
     <light directional="true" diffuse=".6 .6 .6" specular="0.2 0.2 0.2" pos="0 0 4" dir="0 0 -1"/>
-    <geom name="ground" type="plane" size="0 0 1" pos="0.001 0 0" quat="1 0 0 0" material="matplane" condim="1" conaffinity='15' group="0"/>
+    <geom name="ground" type="hfield" hfield="terrain_hfield" pos="0 0 0" material="matplane" condim="1" conaffinity='15'  group="0"/>
 
-    <body name="base_link" pos="0 0 0.75">
+    <body name="base_link" pos="0 0 2.75">
       <site name='imu' size='0.01' pos='0.0 0 0.0'/>
      <inertial 
       pos="-0.04747316 -0.00000245 -0.01033754"
