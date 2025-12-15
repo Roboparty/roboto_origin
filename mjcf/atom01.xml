@@ -12,7 +12,7 @@
     <default>
         <joint limited='true'/>
         <motor ctrllimited='true'/>
-        <geom  condim='4' contype="1" conaffinity="15" solref='0.0012' friction='0.9 0.2 0.2'/>
+        <geom  condim='4' contype="1" conaffinity="15" solref='0.001 2' friction='0.9 0.2 0.2' group="1"/>
         <equality solref='0.001 2'/>
         <default class='visualgeom'>
             <geom material='visualgeom' condim='1' contype='0' conaffinity='0'/>
@@ -70,7 +70,7 @@
   <worldbody>
     <light directional="true" diffuse=".4 .4 .4" specular="0.1 0.1 0.1" pos="0 0 5.0" dir="0 0 -1" castshadow="false"/>
     <light directional="true" diffuse=".6 .6 .6" specular="0.2 0.2 0.2" pos="0 0 4" dir="0 0 -1"/>
-    <geom name="ground" type="plane" size="0 0 1" pos="0.001 0 0" quat="1 0 0 0" material="matplane" condim="1" conaffinity='15'/>
+    <geom name="ground" type="plane" size="0 0 1" pos="0.001 0 0" quat="1 0 0 0" material="matplane" condim="1" conaffinity='15' group="0"/>
 
     <body name="base_link" pos="0 0 0.75">
       <site name='imu' size='0.01' pos='0.0 0 0.0'/>
@@ -188,14 +188,14 @@
           pos="-0.00442275 0.04993792 0.00005596"
           mass="0.47178757"
           fullinertia="0.00133228 0.00008982 0.00137408 0.00012643 -0.00000056 -0.00000148"/>
-          <joint name="left_arm_pitch_joint" pos="0 0 0" axis="0 1 0" range="-2 2" class="arm_joint_param"/>
+          <joint name="left_arm_pitch_joint" pos="0 0 0" axis="0 1 0" range="-3.14 1.57" class="arm_joint_param"/>
           <geom type="mesh" rgba="0.752941 0.752941 0.752941 1" mesh="left_arm_pitch_link" class="visualgeom"/>
           <body name="left_arm_roll_link" pos="0.02 0.056 0">
           <inertial 
             pos="-0.00433076 0 -0.02378501"
             mass="0.09168685"
             fullinertia="0.00010210 0.00011636 0.00003231 0.0 -0.00002948 0.0"/>
-            <joint name="left_arm_roll_joint" pos="0 0 0" axis="1 0 0" range="-0.25 2.25" class="arm_joint_param"/>
+            <joint name="left_arm_roll_joint" pos="0 0 0" axis="1 0 0" range="-0.25 3.14" class="arm_joint_param"/>
             <geom type="mesh" rgba="0.752941 0.752941 0.752941 1" mesh="left_arm_roll_link" class="visualgeom"/>
             <body name="left_arm_yaw_link" pos="-0.02 0 -0.05">
             <inertial 
@@ -228,14 +228,14 @@
           pos="-0.00442275 -0.04993792 0.00005596"
           mass="0.47178757"
           fullinertia="0.00133228 0.00008982 0.00137408 -0.00012643 -0.00000056 0.00000148"/>
-          <joint name="right_arm_pitch_joint" pos="0 0 0" axis="0 1 0" range="-2 2" class="arm_joint_param"/>
+          <joint name="right_arm_pitch_joint" pos="0 0 0" axis="0 1 0" range="-3.14 1.57" class="arm_joint_param"/>
           <geom type="mesh" rgba="0.752941 0.752941 0.752941 1" mesh="right_arm_pitch_link" class="visualgeom"/>
           <body name="right_arm_roll_link" pos="0.02 -0.056 0">
           <inertial 
             pos="-0.00433076 0.00000000 -0.02378501"
             mass="0.09168685"
             fullinertia="0.00010210 0.00011636 0.00003231 0.0 -0.00002948 0.0"/>
-            <joint name="right_arm_roll_joint" pos="0 0 0" axis="1 0 0" range="-2.25 0.25" class="arm_joint_param"/>
+            <joint name="right_arm_roll_joint" pos="0 0 0" axis="1 0 0" range="-3.14 0.25" class="arm_joint_param"/>
             <geom type="mesh" rgba="0.752941 0.752941 0.752941 1" mesh="right_arm_roll_link" class="visualgeom"/>
             <body name="right_arm_yaw_link" pos="-0.02 0 -0.05">
             <inertial 
