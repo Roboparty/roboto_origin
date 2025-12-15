@@ -25,6 +25,7 @@ from isaaclab_rl.rsl_rl import (  # noqa:F401
 import torch
 import numpy as np
 from functools import lru_cache
+import math
 
 import legged_lab.mdp as mdp
 from legged_lab.assets.roboparty import ATOM01_CFG
@@ -38,6 +39,7 @@ from legged_lab.envs.base.base_config import (  # noqa:F401
     RewardCfg,
     RobotCfg,
     SimCfg,
+    CommandRangesCfg,
 )
 from legged_lab.terrains import GRAVEL_TERRAINS_CFG, ROUGH_TERRAINS_CFG, ROUGH_HARD_TERRAINS_CFG
 
@@ -61,11 +63,6 @@ class ATOM01RewardCfg(RewardCfg):
     )
     flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=-1.0)
     termination_penalty = RewTerm(func=mdp.is_terminated, weight=-200.0)
-    feet_air_time = RewTerm(
-        func=mdp.feet_air_time_positive_biped,
-        weight=0.25,
-        params={"sensor_cfg": SceneEntityCfg("contact_sensor", body_names=".*ankle_roll.*"), "threshold": 0.4},
-    )
     feet_slide = RewTerm(
         func=mdp.feet_slide,
         weight=-0.3,
@@ -86,12 +83,12 @@ class ATOM01RewardCfg(RewardCfg):
     feet_distance = RewTerm(
         func=mdp.body_distance_y,
         weight=0.1,
-        params={"asset_cfg": SceneEntityCfg("robot", body_names=[".*ankle_roll.*"]), "min": 0.16, "max": 0.50},
+        params={"asset_cfg": SceneEntityCfg("robot", body_names=[".*ankle_roll.*"]), "min": 0.10, "max": 0.50},
     )
     knee_distance = RewTerm(
         func=mdp.body_distance_y,
         weight=0.1,
-        params={"asset_cfg": SceneEntityCfg("robot", body_names=[".*_knee.*"]), "min": 0.18, "max": 0.35},
+        params={"asset_cfg": SceneEntityCfg("robot", body_names=[".*_knee.*"]), "min": 0.13, "max": 0.41},
     )
     feet_stumble = RewTerm(
         func=mdp.feet_stumble,
@@ -146,14 +143,13 @@ class ATOM01RewardCfg(RewardCfg):
     stand_still = RewTerm(func=mdp.stand_still, weight=-0.2, params={"pos_cfg": SceneEntityCfg("robot", joint_names=[".*_arm.*", ".*_elbow.*", ".*torso.*", ".*_thigh.*", ".*_knee.*", ".*_ankle.*"]),
                                                                      "vel_cfg": SceneEntityCfg("robot", joint_names=[".*_arm.*", ".*_elbow.*", ".*torso.*", ".*_thigh.*", ".*_knee.*", ".*_ankle.*"]), 
                                                                      "pos_weight": 0.0, "vel_weight": 0.04})
-    feet_height = RewTerm(
-        func=mdp.feet_height,
-        weight=0.2,
+    undesired_foothold = RewTerm(
+        func=mdp.undesired_foothold, 
+        weight=-0.2,
         params={"sensor_cfg": SceneEntityCfg("contact_sensor", body_names=".*ankle_roll.*"),
-                "asset_cfg": SceneEntityCfg("robot", body_names=".*_ankle_roll.*"),
                 "sensor_cfg1": SceneEntityCfg("left_feet_scanner"),
                 "sensor_cfg2": SceneEntityCfg("right_feet_scanner"),
-                "ankle_height":0.04,"threshold":0.02})
+                "ankle_height":0.04})
 
 def generate_height_scan_mirror(start_idx=140, rows=11, cols=17):
     mirror_indices = []
@@ -372,15 +368,16 @@ class ATOM01AttnEncStage2EnvCfg(BaseEnvCfg):
         self.robot.action_scale = 0.25
         self.robot.actor_obs_history_length = 5
         self.robot.critic_obs_history_length = 1
-        self.domain_rand.action_delay.params["max_delay"] = 5
-        self.domain_rand.action_delay.params["min_delay"] = 3
-        self.domain_rand.action_delay.enable = True
+        self.domain_rand.action_delay.params["max_delay"] = 4
         self.normalization.height_scan_offset = 0.75
         self.sim.physx.gpu_collision_stack_size = 2**29
         self.noise.noise_scales.joint_vel = 1.75
         self.noise.noise_scales.joint_pos = 0.03
         self.noise.noise_scales.lin_vel = 0.2
         self.noise.noise_scales.height_scan = 0.025
+        self.commands.ranges = CommandRangesCfg(
+            lin_vel_x=(-1.0, 1.0), lin_vel_y=(-0.6, 0.6), ang_vel_z=(-1.57, 1.57), heading=(-math.pi, math.pi)
+        )
 
 
 @configclass
@@ -388,10 +385,13 @@ class ATOM01AttnEncStage1EnvCfg(ATOM01AttnEncStage2EnvCfg):
 
     def __post_init__(self):
         super().__post_init__()
-        self.noise.add_noise = False
-        self.domain_rand.action_delay.params["max_delay"] = 4
-        self.domain_rand.action_delay.enable = False
         self.domain_rand.events.push_robot = None
+        self.domain_rand.events.physics_material = None
+        self.domain_rand.events.add_base_mass = None
+        self.domain_rand.events.randomize_rigid_body_com = None
+        self.domain_rand.events.scale_link_mass = None
+        self.domain_rand.events.scale_actuator_gains = None
+        self.domain_rand.events.scale_joint_parameters = None
 
 
 @configclass
@@ -403,12 +403,15 @@ class RslRlPpoEncActorCriticCfg(RslRlPpoActorCriticCfg):
     single_obs_dim:int = 78
     velocity_estimation:bool = False
     critic_encoder:bool = False
+    recon_map:bool = False
 
 @configclass
 class RslRlPpoEncAlgorithmCfg(RslRlPpoAlgorithmCfg):
     velocity_estimation:bool = False
     velocity_slice:slice = slice(78, 81)
     velocity_loss_coef:float = 1.0
+    recon_map:bool = False
+    recon_map_loss_coef:float = 1.0
 
 
 @configclass
@@ -437,6 +440,7 @@ class ATOM01AttnEncStage2AgentCfg(BaseAgentCfg):
             single_obs_dim=81,
             velocity_estimation=True,
             critic_encoder=True,
+            recon_map=True,
         )
         self.algorithm = RslRlPpoEncAlgorithmCfg(
             class_name="AttnEncPPO",
@@ -454,7 +458,9 @@ class ATOM01AttnEncStage2AgentCfg(BaseAgentCfg):
             max_grad_norm=1.0,
             velocity_estimation=True,
             velocity_slice=slice(78, 81),
-            velocity_loss_coef=0.01,
+            velocity_loss_coef=0.1,
+            recon_map=True,
+            recon_map_loss_coef=0.5,
             normalize_advantage_per_mini_batch=False,
             symmetry_cfg=RslRlSymmetryCfg(
                 use_data_augmentation=True, 
