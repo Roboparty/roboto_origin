@@ -3,11 +3,14 @@ import argparse
 import numpy as np
 from PIL import Image
 import os
+import coacd
+import trimesh
 
 parser = argparse.ArgumentParser(description="Export Terrain")
 parser.add_argument("--export_mesh", action='store_true', help="Export combined mesh")
 parser.add_argument("--export_meshes", action='store_true', help="Export meshes")
 parser.add_argument("--export_hfield", action='store_true', help="Export hfield")
+parser.add_argument("--coacd_threshold", type=float, default=0.01, help="Threshold for CoACD decomposition")
 AppLauncher.add_app_launcher_args(parser)
 args = parser.parse_args()
 app_launcher = AppLauncher(args)
@@ -17,6 +20,66 @@ import isaaclab.terrains as terrain_gen
 from isaaclab.terrains.terrain_generator_cfg import TerrainGeneratorCfg
 from isaaclab.terrains.terrain_generator import TerrainGenerator
 
+def decomposite(mesh, base_name, output_dir, threshold=0.01):
+    print(f"Decomposing {base_name} with threshold {threshold}...")
+    assets_dir = os.path.join(output_dir, "assets")
+    os.makedirs(assets_dir, exist_ok=True)
+    mesh.process()
+    # 运行 CoACD 算法
+    coacd_mesh = coacd.Mesh(mesh.vertices, mesh.faces)
+    
+    parts = coacd.run_coacd(
+        coacd_mesh,
+        threshold=threshold,
+        max_convex_hull=-1,
+        preprocess_mode="auto",
+        resolution=4000,
+        mcts_nodes=20,
+        mcts_iterations=150,
+        mcts_max_depth=3,
+        pca=False,
+        merge=True,
+        decimate=False,
+        max_ch_vertex=256,
+        extrude=False,
+        seed=42
+    )
+    
+    asset_lines = []
+    geom_lines = []
+    
+    for i, (verts, faces) in enumerate(parts):
+        part_mesh = trimesh.Trimesh(vertices=verts, faces=faces)
+        
+        part_filename = f"{base_name}_part_{i}.obj"
+        part_path = os.path.join(assets_dir, part_filename)
+        part_mesh.export(part_path)
+        
+        rel_path = os.path.join("assets", part_filename)
+        asset_lines.append(f'<mesh name="{base_name}_part_{i}" file="{rel_path}"/>')
+        geom_lines.append(f'<geom type="mesh" mesh="{base_name}_part_{i}"/>')
+        
+    xml_content = [
+        f'<mujoco model="{base_name}">',
+        '    <asset>',
+        *[f'        {line}' for line in asset_lines],
+        '    </asset>',
+        '    <worldbody>',
+        f'        <body name="{base_name}_collision">',
+        *[f'            {line}' for line in geom_lines],
+        '        </body>',
+        '    </worldbody>',
+        '</mujoco>'
+    ]
+    
+    xml_filename = f"{base_name}.xml"
+    xml_path = os.path.join(output_dir, xml_filename)
+    
+    with open(xml_path, 'w') as f:
+        f.write("\n".join(xml_content))
+        
+    print(f"Saved decomposited XML to {xml_path}")
+
 if __name__ == "__main__":
     cfg = TerrainGeneratorCfg(
         curriculum=False,
@@ -24,7 +87,7 @@ if __name__ == "__main__":
         border_width=2.0,
         num_rows=2,
         num_cols=2,
-        horizontal_scale=0.025,
+        horizontal_scale=0.05,
         vertical_scale=0.005,
         use_cache=False,
         difficulty_range=(0.6, 0.6),
@@ -47,7 +110,7 @@ if __name__ == "__main__":
                 holes=False,
             ),
             "star": terrain_gen.MeshStarTerrainCfg(
-                proportion=0.1, num_bars=12, bar_width_range=(0.2, 0.4), bar_height_range=(2.0, 2.0), platform_width=2.0
+                proportion=0.1, num_bars=12, bar_width_range=(0.25, 0.4), bar_height_range=(2.0, 2.0), platform_width=2.0
             ),
             "stepping_stones": terrain_gen.HfSteppingStonesTerrainCfg(
                 proportion=0.1,
@@ -69,6 +132,7 @@ if __name__ == "__main__":
         filename = "terrain_combined.obj"
         file_path = os.path.join(output_dir, filename)
         terrain_mesh.export(file_path)
+        decomposite(terrain_mesh, "terrain_combined", output_dir)
         print(f"Successfully exported combined mesh to {output_dir}")
 
     if args.export_meshes:
@@ -76,9 +140,11 @@ if __name__ == "__main__":
         for i, mesh in enumerate(terrain_meshes):
             row = i // cfg.num_cols
             col = i % cfg.num_cols
+            base_name = f"terrain_{row}_{col}"
             filename = f"terrain_{row}_{col}.obj"
             file_path = os.path.join(output_dir, filename)
             mesh.export(file_path)
+            decomposite(mesh, base_name, output_dir)
         print(f"Successfully exported all meshes to {output_dir}")
 
     if args.export_hfield:
@@ -89,7 +155,7 @@ if __name__ == "__main__":
         max_x, max_y, max_z = bounds[1]
 
         # 设置分辨率
-        res = 0.05
+        res = 0.03
 
         x_vals = np.arange(min_x, max_x, res)
         y_vals = np.arange(min_y, max_y, res)
