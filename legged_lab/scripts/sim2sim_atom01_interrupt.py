@@ -320,7 +320,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Deployment script.')
     parser.add_argument('--load_model', type=str, default=f'{LEGGED_LAB_ROOT_DIR}/logs/atom01_interrupt/policy.pt',
                         help='Run to load from.')
-    parser.add_argument('--terrain', action='store_true', default='plane', help='terrain or plane')
+    parser.add_argument('--terrain', action='store_true', help='terrain or plane')
     parser.add_argument('--headless', action='store_true',
                       help='Run without GUI and save video')
     args = parser.parse_args()
