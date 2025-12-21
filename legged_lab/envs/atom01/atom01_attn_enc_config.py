@@ -437,7 +437,7 @@ class ATOM01AttnEncStage2AgentCfg(BaseAgentCfg):
             head_num=8,
             map_size=(17, 11),
             map_resolution=0.1,
-            single_obs_dim=81,
+            single_obs_dim=78,
             velocity_estimation=True,
             critic_encoder=True,
             recon_map=True,
