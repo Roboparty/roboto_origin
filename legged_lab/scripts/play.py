@@ -75,9 +75,9 @@ class TorchAttnEncPolicyExporter(torch.nn.Module):
         if self.velocity_estimation:
             velocity = self.estimator(prop_obs)
             obs = torch.cat([prop_obs[:, -self.single_obs_dim:], velocity], dim=1) 
-            embedding, attention = self.encoder(perception_obs, obs, embedding_only=False)
+            embedding, attention, *_ = self.encoder(perception_obs, obs, embedding_only=False)
         else:
-            embedding, attention = self.encoder(perception_obs, prop_obs[:, -self.single_obs_dim:], embedding_only=True)
+            embedding, attention, *_ = self.encoder(perception_obs, prop_obs[:, -self.single_obs_dim:], embedding_only=True)
             embedding = torch.cat([embedding, prop_obs], dim=-1)
         return self.actor(embedding)
 
@@ -125,9 +125,9 @@ class OnnxAttnEncPolicyExporter(torch.nn.Module):
         if self.velocity_estimation:
             velocity = self.estimator(prop_obs)
             obs = torch.cat([prop_obs[:, -self.single_obs_dim:], velocity], dim=1) 
-            embedding, attention = self.encoder(perception_obs, obs, embedding_only=False)
+            embedding, attention, *_ = self.encoder(perception_obs, obs, embedding_only=False)
         else:
-            embedding, attention = self.encoder(perception_obs, prop_obs[:, -self.single_obs_dim:], embedding_only=True)
+            embedding, attention, *_ = self.encoder(perception_obs, prop_obs[:, -self.single_obs_dim:], embedding_only=True)
             embedding = torch.cat([embedding, prop_obs], dim=-1)
         return self.actor(embedding)
 
