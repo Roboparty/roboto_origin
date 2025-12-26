@@ -149,11 +149,11 @@ def run_mujoco(policy, cfg, headless=False):
     hist_obs.fill(0.0)
 
     offset = np.zeros((cfg.robot_config.map_size[0] * cfg.robot_config.map_size[1], 2), dtype=np.double)
-    start_x = (cfg.robot_config.map_size[0]-1)/2 * cfg.robot_config.resolution
-    start_y = (cfg.robot_config.map_size[1]-1)/2 * cfg.robot_config.resolution
+    start_x = -(cfg.robot_config.map_size[0]-1)/2 * cfg.robot_config.resolution
+    start_y = -(cfg.robot_config.map_size[1]-1)/2 * cfg.robot_config.resolution
     for j in range (cfg.robot_config.map_size[1]):
         for i in range (cfg.robot_config.map_size[0]):
-            offset[j*cfg.robot_config.map_size[0]+i] = np.array([start_x-i*cfg.robot_config.resolution, start_y-j*cfg.robot_config.resolution])
+            offset[j*cfg.robot_config.map_size[0]+i] = np.array([start_x+i*cfg.robot_config.resolution, start_y+j*cfg.robot_config.resolution])
 
     count_lowlevel = 0
 
@@ -171,14 +171,6 @@ def run_mujoco(policy, cfg, headless=False):
     # -------------------------------------------------------------
     is_first_frame = True
     for step in tqdm(range(int(cfg.sim_config.sim_duration / cfg.sim_config.dt)), desc="Simulating..."):
-
-        t = step * cfg.sim_config.dt
-        if 1 < t < 5:
-            cmd.vy = 0.6
-            cmd.vx = 0.0
-        elif t > 5:
-            cmd.vy = 0.0
-            cmd.vx = 0.4
 
         # Obtain an observation
         q, dq, quat, v, omega, gvec = get_obs(data)
