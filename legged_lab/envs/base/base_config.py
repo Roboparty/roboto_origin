@@ -127,8 +127,8 @@ class EventCfg:
         mode="startup",
         params={
             "asset_cfg": SceneEntityCfg("robot", body_names=".*"),
-            "static_friction_range": (0.1, 1.3),
-            "dynamic_friction_range": (0.1, 0.8),
+            "static_friction_range": (0.3, 1.6),
+            "dynamic_friction_range": (0.3, 1.2),
             "restitution_range": (0.0, 0.5),
             "num_buckets": 64,
             "make_consistent": True, 
@@ -148,7 +148,7 @@ class EventCfg:
         mode="startup",
         params={
             "asset_cfg": SceneEntityCfg("robot", body_names=MISSING),
-            "com_range": {"x": (-0.05, 0.05), "y": (-0.05, 0.05), "z": (-0.05, 0.05)},
+            "com_range": {"x": (-0.025, 0.025), "y": (-0.025, 0.025), "z": (-0.05, 0.05)},
         },
     )
     scale_link_mass = EventTerm(
@@ -158,7 +158,7 @@ class EventCfg:
             "asset_cfg": SceneEntityCfg(
                 "robot", body_names=MISSING
             ),
-            "mass_distribution_params": (0.8, 1.2),
+            "mass_distribution_params": (0.9, 1.1),
             "operation": "scale",
         },
     )
@@ -167,8 +167,8 @@ class EventCfg:
         mode="startup",
         params={
             "asset_cfg": SceneEntityCfg("robot", joint_names=MISSING),
-            "stiffness_distribution_params": (0.85, 1.15),
-            "damping_distribution_params": (0.85, 1.15),
+            "stiffness_distribution_params": (0.9, 1.1),
+            "damping_distribution_params": (0.9, 1.1),
             "operation": "scale",
         },
     )
@@ -190,10 +190,10 @@ class EventCfg:
             "velocity_range": {
                 "x": (-0.5, 0.5),
                 "y": (-0.5, 0.5),
-                "z": (-0.5, 0.5),
-                "roll": (-0.5, 0.5),
-                "pitch": (-0.5, 0.5),
-                "yaw": (-0.5, 0.5),
+                "z": (-0.2, 0.2),
+                "roll": (-0.52, 0.52),
+                "pitch": (-0.52, 0.52),
+                "yaw": (-0.78, 0.78),
             },
         },
     )
@@ -209,7 +209,16 @@ class EventCfg:
         func=mdp.push_by_setting_velocity,
         mode="interval",
         interval_range_s=(10.0, 15.0),
-        params={"velocity_range": {"x": (-1.0, 1.0), "y": (-1.0, 1.0)}},
+        params={
+            "velocity_range": {
+                "x": (-0.5, 0.5),
+                "y": (-0.5, 0.5),
+                "z": (-0.2, 0.2),
+                "roll": (-0.52, 0.52),
+                "pitch": (-0.52, 0.52),
+                "yaw": (-0.78, 0.78),
+            }
+        },
     )
 
 
@@ -309,8 +318,8 @@ class BaseEnvCfg:
                 mode="startup",
                 params={
                     "asset_cfg": SceneEntityCfg("robot", body_names=".*"),
-                    "static_friction_range": (0.1, 1.3),
-                    "dynamic_friction_range": (0.1, 0.8),
+                    "static_friction_range": (0.3, 1.6),
+                    "dynamic_friction_range": (0.3, 1.2),
                     "restitution_range": (0.0, 0.5),
                     "num_buckets": 64,
                     "make_consistent": True,
@@ -330,7 +339,7 @@ class BaseEnvCfg:
                 mode="startup",
                 params={
                     "asset_cfg": SceneEntityCfg("robot", body_names=MISSING),
-                    "com_range": {"x": (-0.05, 0.05), "y": (-0.05, 0.05), "z": (-0.05, 0.05)},
+                    "com_range": {"x": (-0.025, 0.025), "y": (-0.025, 0.025), "z": (-0.05, 0.05)},
                 },
             ),
             scale_link_mass = EventTerm(
@@ -340,7 +349,7 @@ class BaseEnvCfg:
                     "asset_cfg": SceneEntityCfg(
                         "robot", body_names=MISSING
                     ),
-                    "mass_distribution_params": (0.8, 1.2),
+                    "mass_distribution_params": (0.9, 1.1),
                     "operation": "scale",
                 },
             ),
@@ -349,8 +358,8 @@ class BaseEnvCfg:
                 mode="startup",
                 params={
                     "asset_cfg": SceneEntityCfg("robot", joint_names=MISSING),
-                    "stiffness_distribution_params": (0.85, 1.15),
-                    "damping_distribution_params": (0.85, 1.15),
+                    "stiffness_distribution_params": (0.9, 1.1),
+                    "damping_distribution_params": (0.9, 1.1),
                     "operation": "scale",
                 },
             ),
@@ -372,10 +381,10 @@ class BaseEnvCfg:
                     "velocity_range": {
                         "x": (-0.5, 0.5),
                         "y": (-0.5, 0.5),
-                        "z": (-0.5, 0.5),
-                        "roll": (-0.5, 0.5),
-                        "pitch": (-0.5, 0.5),
-                        "yaw": (-0.5, 0.5),
+                        "z": (-0.2, 0.2),
+                        "roll": (-0.52, 0.52),
+                        "pitch": (-0.52, 0.52),
+                        "yaw": (-0.78, 0.78),
                     },
                 },
             ),
@@ -391,7 +400,16 @@ class BaseEnvCfg:
                 func=mdp.push_by_setting_velocity,
                 mode="interval",
                 interval_range_s=(10.0, 15.0),
-                params={"velocity_range": {"x": (-1.0, 1.0), "y": (-1.0, 1.0), "yaw": (-1.0, 1.0)}},
+                params={
+                    "velocity_range": {
+                        "x": (-0.5, 0.5),
+                        "y": (-0.5, 0.5),
+                        "z": (-0.2, 0.2),
+                        "roll": (-0.52, 0.52),
+                        "pitch": (-0.52, 0.52),
+                        "yaw": (-0.78, 0.78),
+                    }
+                },
             ),
         ),
         action_delay=ActionDelayCfg(enable=False, params={"max_delay": 5, "min_delay": 0}),
