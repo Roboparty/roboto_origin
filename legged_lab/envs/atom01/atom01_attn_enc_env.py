@@ -8,12 +8,12 @@ from isaaclab.utils.math import quat_apply_inverse,quat_apply_yaw, quat_inv
 from legged_lab.envs.base.base_env import (  # noqa:F401
     BaseEnv,
 )
-from .atom01_attn_enc_config import ATOM01AttnEncStage1EnvCfg, ATOM01AttnEncStage2EnvCfg
+from .atom01_attn_enc_config import ATOM01AttnEncEnvCfg
 
 class ATOM01AttnEncEnv(BaseEnv):
     def __init__(self, cfg, headless):
         super().__init__(cfg, headless)
-        self.cfg: ATOM01AttnEncStage1EnvCfg | ATOM01AttnEncStage2EnvCfg
+        self.cfg: ATOM01AttnEncEnvCfg
 
     def compute_current_observations(self):
         robot = self.robot

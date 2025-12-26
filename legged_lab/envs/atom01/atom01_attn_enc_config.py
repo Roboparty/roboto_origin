@@ -338,7 +338,7 @@ class AttnEncCfg:
 
 
 @configclass
-class ATOM01AttnEncStage2EnvCfg(BaseEnvCfg):
+class ATOM01AttnEncEnvCfg(BaseEnvCfg):
 
     reward = ATOM01RewardCfg()
     attn_enc = AttnEncCfg(
@@ -360,8 +360,8 @@ class ATOM01AttnEncStage2EnvCfg(BaseEnvCfg):
         self.robot.terminate_contacts_body_names = ["torso_link", ".*_thigh_yaw_link", ".*_thigh_roll_link", ".*_elbow_.*_link", ".*_arm_.*_link"]
         self.robot.feet_body_names = [".*ankle_roll.*"]
         self.noise.add_noise = True
-        self.domain_rand.events.add_base_mass.params["asset_cfg"].body_names = ["torso_link", "base_link"]
-        self.domain_rand.events.randomize_rigid_body_com.params["asset_cfg"].body_names = ["torso_link", "base_link"]
+        self.domain_rand.events.add_base_mass.params["asset_cfg"].body_names = ["torso_link"]
+        self.domain_rand.events.randomize_rigid_body_com.params["asset_cfg"].body_names = ["torso_link"]
         self.domain_rand.events.scale_link_mass.params["asset_cfg"].body_names = ["left_.*_link", "right_.*_link"]
         self.domain_rand.events.scale_actuator_gains.params["asset_cfg"].joint_names = [".*_joint"]
         self.domain_rand.events.scale_joint_parameters.params["asset_cfg"].joint_names = [".*_joint"]
@@ -378,20 +378,7 @@ class ATOM01AttnEncStage2EnvCfg(BaseEnvCfg):
         self.commands.ranges = CommandRangesCfg(
             lin_vel_x=(-1.0, 1.0), lin_vel_y=(-0.6, 0.6), ang_vel_z=(-1.57, 1.57), heading=(-math.pi, math.pi)
         )
-
-
-@configclass
-class ATOM01AttnEncStage1EnvCfg(ATOM01AttnEncStage2EnvCfg):
-
-    def __post_init__(self):
-        super().__post_init__()
         self.domain_rand.events.push_robot = None
-        self.domain_rand.events.physics_material = None
-        self.domain_rand.events.add_base_mass = None
-        self.domain_rand.events.randomize_rigid_body_com = None
-        self.domain_rand.events.scale_link_mass = None
-        self.domain_rand.events.scale_actuator_gains = None
-        self.domain_rand.events.scale_joint_parameters = None
 
 
 @configclass
@@ -415,14 +402,14 @@ class RslRlPpoEncAlgorithmCfg(RslRlPpoAlgorithmCfg):
 
 
 @configclass
-class ATOM01AttnEncStage2AgentCfg(BaseAgentCfg):
+class ATOM01AttnEncAgentCfg(BaseAgentCfg):
     def __post_init__(self):
         super().__post_init__()
         self.experiment_name: str = "atom01_attn_enc"
         self.wandb_project: str = "atom01_attn_enc"
         self.seed = 42
         self.num_steps_per_env = 24
-        self.max_iterations = 3001
+        self.max_iterations = 9001
         self.save_interval = 1000
         self.runner_class_name = "AttnEncOnPolicyRunner"
         self.empirical_normalization = True
@@ -440,7 +427,7 @@ class ATOM01AttnEncStage2AgentCfg(BaseAgentCfg):
             single_obs_dim=78,
             velocity_estimation=True,
             critic_encoder=True,
-            recon_map=True,
+            recon_map=False,
         )
         self.algorithm = RslRlPpoEncAlgorithmCfg(
             class_name="AttnEncPPO",
@@ -459,7 +446,7 @@ class ATOM01AttnEncStage2AgentCfg(BaseAgentCfg):
             velocity_estimation=True,
             velocity_slice=slice(78, 81),
             velocity_loss_coef=0.1,
-            recon_map=True,
+            recon_map=False,
             recon_map_loss_coef=0.5,
             normalize_advantage_per_mini_batch=False,
             symmetry_cfg=RslRlSymmetryCfg(
@@ -471,10 +458,3 @@ class ATOM01AttnEncStage2AgentCfg(BaseAgentCfg):
             rnd_cfg=None,  # RslRlRndCfg()
         )
         self.clip_actions = 100.0
-
-
-@configclass
-class ATOM01AttnEncStage1AgentCfg(ATOM01AttnEncStage2AgentCfg):
-    def __post_init__(self):
-        super().__post_init__()
-        self.max_iterations = 9001
