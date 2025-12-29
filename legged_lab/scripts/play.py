@@ -59,9 +59,9 @@ class TorchAttnEncPolicyExporter(torch.nn.Module):
         self.actor = copy.deepcopy(policy.actor)
         self.encoder = copy.deepcopy(policy.encoder)
         self.num_actor_obs = policy.num_actor_obs
-        self.velocity_estimation = policy.velocity_estimation
+        self.critic_estimation = policy.critic_estimation
         self.single_obs_dim = policy.single_obs_dim
-        if self.velocity_estimation:
+        if self.critic_estimation:
             self.estimator = copy.deepcopy(policy.estimator)
         # copy normalizer if exists
         if normalizer:
@@ -72,9 +72,9 @@ class TorchAttnEncPolicyExporter(torch.nn.Module):
     def forward(self, x):
         prop_obs = self.normalizer(x[:, :self.num_actor_obs])
         perception_obs = x[:, self.num_actor_obs:]
-        if self.velocity_estimation:
-            velocity = self.estimator(prop_obs)
-            obs = torch.cat([prop_obs[:, -self.single_obs_dim:], velocity], dim=1) 
+        if self.critic_estimation:
+            critic_pred = self.estimator(prop_obs)
+            obs = torch.cat([prop_obs[:, -self.single_obs_dim:], critic_pred], dim=1) 
             embedding, attention, *_ = self.encoder(perception_obs, obs, embedding_only=False)
         else:
             embedding, attention, *_ = self.encoder(perception_obs, prop_obs[:, -self.single_obs_dim:], embedding_only=True)
@@ -108,10 +108,10 @@ class OnnxAttnEncPolicyExporter(torch.nn.Module):
         self.actor = copy.deepcopy(policy.actor)
         self.encoder = copy.deepcopy(policy.encoder)
         self.num_actor_obs = policy.num_actor_obs
-        self.velocity_estimation = policy.velocity_estimation
+        self.critic_estimation = policy.critic_estimation
         self.single_obs_dim = policy.single_obs_dim
         self.map_size = policy.map_size
-        if self.velocity_estimation:
+        if self.critic_estimation:
             self.estimator = copy.deepcopy(policy.estimator)
         # copy normalizer if exists
         if normalizer:
@@ -122,9 +122,9 @@ class OnnxAttnEncPolicyExporter(torch.nn.Module):
     def forward(self, x):
         prop_obs = self.normalizer(x[:, :self.num_actor_obs])
         perception_obs = x[:, self.num_actor_obs:]
-        if self.velocity_estimation:
-            velocity = self.estimator(prop_obs)
-            obs = torch.cat([prop_obs[:, -self.single_obs_dim:], velocity], dim=1) 
+        if self.critic_estimation:
+            critic_pred = self.estimator(prop_obs)
+            obs = torch.cat([prop_obs[:, -self.single_obs_dim:], critic_pred], dim=1) 
             embedding, attention, *_ = self.encoder(perception_obs, obs, embedding_only=False)
         else:
             embedding, attention, *_ = self.encoder(perception_obs, prop_obs[:, -self.single_obs_dim:], embedding_only=True)

@@ -46,8 +46,8 @@ from legged_lab.terrains import GRAVEL_TERRAINS_CFG, ROUGH_TERRAINS_CFG, ROUGH_H
 
 @configclass
 class ATOM01RewardCfg(RewardCfg):
-    track_lin_vel_xy_exp = RewTerm(func=mdp.track_lin_vel_xy_yaw_frame_exp, weight=4.0, params={"std": 1.0})
-    track_ang_vel_z_exp = RewTerm(func=mdp.track_ang_vel_z_world_exp, weight=2.0, params={"std": 1.0})
+    track_lin_vel_xy_exp = RewTerm(func=mdp.track_lin_vel_xy_yaw_frame_exp, weight=1.0, params={"std": 0.5})
+    track_ang_vel_z_exp = RewTerm(func=mdp.track_ang_vel_z_world_exp, weight=1.0, params={"std": 0.5})
     lin_vel_z_l2 = RewTerm(func=mdp.lin_vel_z_l2, weight=-0.05)
     ang_vel_xy_l2 = RewTerm(func=mdp.ang_vel_xy_l2, weight=-0.05)
     energy = RewTerm(func=mdp.energy, weight=-1e-4)
@@ -236,7 +236,8 @@ critic_obs_mirror_indices = policy_obs_mirror_indices +\
                              90, 89,\
                              92, 91]\
                             + joint_acc_mirror_indices + joint_torques_mirror_indices +\
-                            [139]
+                            [139] +\
+                            [143, 144, 145, 140, 141, 142]
 critic_obs_mirror_signs = policy_obs_mirror_signs +\
                            [1, -1, 1,\
                             1, 1,\
@@ -244,7 +245,8 @@ critic_obs_mirror_signs = policy_obs_mirror_signs +\
                             1, 1,\
                             1, 1]\
                             + joint_acc_mirror_signs + joint_torques_mirror_signs +\
-                            [1]
+                            [1] +\
+                            [1, -1, 1, 1, -1, 1]
 act_mirror_indices = [1, 0, 2, 4, 3, 6, 5, 8, 7, 10, 9, 12, 11, 14, 13, 16, 15, 18, 17, 20, 19, 22, 21]
 act_mirror_signs = [-1, -1, -1, -1, -1, 1, 1, 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, 1, 1, -1, -1, -1, -1]
 policy_obs_mirror_indices_expanded = []
@@ -378,7 +380,6 @@ class ATOM01AttnEncEnvCfg(BaseEnvCfg):
         self.commands.ranges = CommandRangesCfg(
             lin_vel_x=(-1.0, 1.0), lin_vel_y=(-0.6, 0.6), ang_vel_z=(-1.57, 1.57), heading=(-math.pi, math.pi)
         )
-        self.domain_rand.events.push_robot = None
 
 
 @configclass
@@ -388,15 +389,16 @@ class RslRlPpoEncActorCriticCfg(RslRlPpoActorCriticCfg):
     map_size:tuple = (17, 11)
     map_resolution:float = 0.1
     single_obs_dim:int = 78
-    velocity_estimation:bool = False
+    critic_estimation:bool = False
+    estimation_slice:list = [78, 79, 80]
     critic_encoder:bool = False
     recon_map:bool = False
 
 @configclass
 class RslRlPpoEncAlgorithmCfg(RslRlPpoAlgorithmCfg):
-    velocity_estimation:bool = False
-    velocity_slice:slice = slice(78, 81)
-    velocity_loss_coef:float = 1.0
+    critic_estimation:bool = False
+    estimation_slice:list = [78, 79, 80]
+    estimation_loss_coef:float = 1.0
     recon_map:bool = False
     recon_map_loss_coef:float = 1.0
 
@@ -425,7 +427,8 @@ class ATOM01AttnEncAgentCfg(BaseAgentCfg):
             map_size=(17, 11),
             map_resolution=0.1,
             single_obs_dim=78,
-            velocity_estimation=True,
+            critic_estimation=True,
+            estimation_slice=[78, 79, 80, 81, 82, 91, 92, 140, 141, 142, 143, 144, 145],
             critic_encoder=True,
             recon_map=False,
         )
@@ -443,9 +446,9 @@ class ATOM01AttnEncAgentCfg(BaseAgentCfg):
             lam=0.95,
             desired_kl=0.01,
             max_grad_norm=1.0,
-            velocity_estimation=True,
-            velocity_slice=slice(78, 81),
-            velocity_loss_coef=0.1,
+            critic_estimation=True,
+            estimation_slice=[78, 79, 80, 81, 82, 91, 92, 140, 141, 142, 143, 144, 145],
+            estimation_loss_coef=0.1,
             recon_map=False,
             recon_map_loss_coef=0.5,
             normalize_advantage_per_mini_batch=False,

@@ -69,13 +69,17 @@ class ATOM01AttnEncEnv(BaseEnv):
         joint_torque = robot.data.applied_torque
         joint_acc = robot.data.joint_acc
         action_delay = self.action_buffer.time_lags.to(self.device).unsqueeze(1)
+        root_quat_w = robot.data.root_quat_w.unsqueeze(1).expand(-1, 2, -1)
+        root_pos_w = robot.data.root_pos_w.unsqueeze(1).expand(-1, 2, -1)
+        feet_pos_w = robot.data.body_pos_w[:, self.feet_cfg.body_ids]
+        feet_pos = quat_apply_inverse(root_quat_w, feet_pos_w - root_pos_w)
         if self.cfg.attn_enc.vel_in_obs:
             current_critic_obs = torch.cat(
-                [current_actor_obs, feet_contact.float(), feet_contact_force.flatten(1), feet_air_time.flatten(1), feet_height.flatten(1), joint_acc, joint_torque, action_delay.float()], dim=-1
+                [current_actor_obs, feet_contact.float(), feet_contact_force.flatten(1), feet_air_time.flatten(1), feet_height.flatten(1), joint_acc, joint_torque, action_delay.float(), feet_pos.flatten(1)], dim=-1
             )
         else:
             current_critic_obs = torch.cat(
-                [current_actor_obs, lin_vel * self.obs_scales.lin_vel, feet_contact.float(), feet_contact_force.flatten(1), feet_air_time.flatten(1), feet_height.flatten(1), joint_acc, joint_torque, action_delay.float()], dim=-1
+                [current_actor_obs, lin_vel * self.obs_scales.lin_vel, feet_contact.float(), feet_contact_force.flatten(1), feet_air_time.flatten(1), feet_height.flatten(1), joint_acc, joint_torque, action_delay.float(), feet_pos.flatten(1)], dim=-1
             )
 
         return current_actor_obs, current_critic_obs
