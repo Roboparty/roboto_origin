@@ -265,8 +265,8 @@ def play():
 
             if hasattr(env_cfg, "attn_enc"):
                 perception_obs = extras["observations"]["perception"]
-                if agent_cfg.policy.velocity_estimation:
-                    actions, output_attn, velocity = policy(perception_obs, obs)
+                if agent_cfg.policy.critic_estimation:
+                    actions, output_attn, critic_pred = policy(perception_obs, obs)
                 else: 
                     actions, output_attn = policy(perception_obs, obs)
                 height_scan = (
