@@ -33,12 +33,12 @@ In the future, we will gradually add the motion control algorithms implemented o
 
 ### Repository Modules
 
-| Module Name         | Description                                                                                                                                               | Repository Link                              |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| **Atom01_hardware** | Hardware design files for Atom01 robot, including structural drawings and design materials                                                                | https://github.com/Roboparty/Atom01_hardware |
-| **atom01_deploy**   | ROS2 deployment framework with modular architecture middleware for robot deployment and control, supporting IMU, motor drivers, inference, etc.           | https://github.com/Roboparty/atom01_deploy   |
-| **atom01_train**    | Direct IsaacLab training workflow providing high transparency and low refactoring difficulty RL training environment, supports Sim2Sim transfer to MuJoCo | https://github.com/Roboparty/atom01_train    |
-| **atom01_urdf**     | URDF model files for Atom01 robot, containing kinematic and dynamic descriptions for simulation and visualization                                         | https://github.com/Roboparty/atom01_urdf     |
+| Module Name            | Description                                                                                                                                               | Repository Link                                 |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| **Atom01_hardware**    | Hardware design files for Atom01 robot, including structural drawings and design materials                                                                | https://github.com/Roboparty/Atom01_hardware    |
+| **atom01_deploy**      | ROS2 deployment framework with modular architecture middleware for robot deployment and control, supporting IMU, motor drivers, inference, etc.           | https://github.com/Roboparty/atom01_deploy      |
+| **atom01_train**       | Direct IsaacLab training workflow providing high transparency and low refactoring difficulty RL training environment, supports Sim2Sim transfer to MuJoCo | https://github.com/Roboparty/atom01_train       |
+| **atom01_description** | URDF model files for Atom01 robot, containing kinematic and dynamic descriptions for simulation and visualization                                         | https://github.com/Roboparty/atom01_description |
 
 ---
 
