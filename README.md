@@ -6,6 +6,8 @@
 
 ![Robot Overview](assets/1280X1280.JPEG)
 
+**[中文](README_cn.md)**
+
 ## About Us
 
 We are **RoboParty**, founded on February 21, 2025. We started developing humanoid robots in April and completed the prototype **ROBOTO_ORIGIN** in just four months. We have always upheld the philosophy of open source. ROBOTO_ORIGIN's entire R&D process, including all structures, electronics, training, and deployment, has been open-sourced.
