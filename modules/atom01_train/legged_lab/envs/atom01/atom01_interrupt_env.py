@@ -1,0 +1,287 @@
+from isaaclab.markers import VisualizationMarkers
+from isaaclab.managers.scene_entity_cfg import SceneEntityCfg
+from isaaclab.utils.buffers import CircularBuffer, DelayBuffer
+import torch
+import numpy as np
+
+from legged_lab.envs.base.base_env import (  # noqa:F401
+    BaseEnv,
+)
+
+from .atom01_interrupt_config import ATOM01InterruptEnvCfg
+
+class ATOM01InterruptEnv(BaseEnv):
+    def __init__(self, cfg, headless):
+        super().__init__(cfg, headless)
+        self.cfg: ATOM01InterruptEnvCfg
+
+    def init_buffers(self):
+        self.extras = {}
+
+        self.max_episode_length_s = self.cfg.scene.max_episode_length_s
+        self.max_episode_length = np.ceil(self.max_episode_length_s / self.step_dt)
+        self.num_actions = self.robot.data.default_joint_pos.shape[1]
+        self.clip_actions = self.cfg.normalization.clip_actions
+        self.clip_obs = self.cfg.normalization.clip_observations
+
+        self.action_scale = self.cfg.robot.action_scale
+        self.action_buffer = DelayBuffer(
+            self.cfg.domain_rand.action_delay.params["max_delay"], self.num_envs, device=self.device
+        )
+        self.action_buffer.compute(
+            torch.zeros(self.num_envs, self.num_actions, dtype=torch.float, device=self.device, requires_grad=False)
+        )
+        if self.cfg.domain_rand.action_delay.enable:
+            time_lags = torch.randint(
+                low=self.cfg.domain_rand.action_delay.params["min_delay"],
+                high=self.cfg.domain_rand.action_delay.params["max_delay"] + 1,
+                size=(self.num_envs,),
+                dtype=torch.int,
+                device=self.device,
+            )
+            self.action_buffer.set_time_lag(time_lags, torch.arange(self.num_envs, device=self.device))
+
+        self.robot_cfg = SceneEntityCfg(name="robot")
+        self.robot_cfg.resolve(self.scene)
+        self.termination_contact_cfg = SceneEntityCfg(
+            name="contact_sensor", body_names=self.cfg.robot.terminate_contacts_body_names
+        )
+        self.termination_contact_cfg.resolve(self.scene)
+        self.feet_cfg = SceneEntityCfg(name="contact_sensor", body_names=self.cfg.robot.feet_body_names)
+        self.feet_cfg.resolve(self.scene)
+
+        self.obs_scales = self.cfg.normalization.obs_scales
+        self.add_noise = self.cfg.noise.add_noise
+
+        self.episode_length_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.long)
+        self.sim_step_counter = 0
+        self.reset_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.bool)
+        self.time_out_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.bool)
+
+        if self.cfg.interrupt.use_interrupt:
+            self.num_steps = 0
+            self.interrupt_joint_cfg = SceneEntityCfg(name="robot", joint_names=self.cfg.interrupt.interrupt_joint_names, preserve_order=True)
+            self.interrupt_joint_cfg.resolve(self.scene)
+            all_indices = torch.arange(self.num_envs, device=self.device)
+            perm = torch.randperm(self.num_envs, device=self.device)
+            self.interrupt_indices = all_indices[perm[:int(self.num_envs * self.cfg.interrupt.interrupt_ratio)]]
+            self.interrupt_mode_mask = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device, requires_grad=False)
+            self.interrupt_mode_mask[self.interrupt_indices] = True
+            self.interrupt_mask = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device, requires_grad=False)
+            self.interrupt_actions = torch.zeros(self.num_envs, len(self.cfg.interrupt.interrupt_joint_names), dtype=torch.float, device=self.device, requires_grad=False)
+            self.interrupt_scale = torch.tensor(self.cfg.interrupt.interrupt_scale, dtype=torch.float, device=self.device, requires_grad=False).unsqueeze(0)
+            self.interrupt_lower_bound = torch.tensor(self.cfg.interrupt.interrupt_lower_bound, dtype=torch.float, device=self.device, requires_grad=False).unsqueeze(0)
+            self.interrupt_rad_curriculum = torch.zeros(self.num_envs, dtype=torch.float, device=self.device, requires_grad=False)
+            self.interrupt_vis = VisualizationMarkers(self.cfg.interrupt_vis)
+            self.interrupt_vis.set_visibility(True)
+        
+        self.init_obs_buffer()
+
+    def compute_current_observations(self):
+        robot = self.robot
+        net_contact_forces = self.contact_sensor.data.net_forces_w_history
+
+        ang_vel = robot.data.root_ang_vel_b
+        projected_gravity = robot.data.projected_gravity_b
+        command = self.command_generator.command
+        joint_pos = robot.data.joint_pos - robot.data.default_joint_pos
+        joint_vel = robot.data.joint_vel - robot.data.default_joint_vel
+        action = self.action_buffer._circular_buffer.buffer[:, -1, :]
+        current_actor_obs = torch.cat(
+            [
+                ang_vel * self.obs_scales.ang_vel,
+                projected_gravity * self.obs_scales.projected_gravity,
+                command * self.obs_scales.commands,
+                joint_pos * self.obs_scales.joint_pos,
+                joint_vel * self.obs_scales.joint_vel,
+                action * self.obs_scales.actions,
+            ],
+            dim=-1,
+        )
+        if self.cfg.interrupt.use_interrupt:
+            current_actor_obs = torch.cat([current_actor_obs, self.interrupt_mask.unsqueeze(1)], dim=-1)
+
+        root_lin_vel = robot.data.root_lin_vel_b
+        feet_contact = torch.max(torch.norm(net_contact_forces[:, :, self.feet_cfg.body_ids], dim=-1), dim=1)[0] > 1.0
+        feet_contact_force = self.contact_sensor.data.net_forces_w[:, self.feet_cfg.body_ids, :]
+        feet_air_time = self.contact_sensor.data.current_air_time[:, self.feet_cfg.body_ids]
+        feet_height = torch.stack(
+        [
+            self.scene[sensor_cfg.name].data.pos_w[:, 2]
+            - self.scene[sensor_cfg.name].data.ray_hits_w[..., 2].mean(dim=-1)
+            for sensor_cfg in [SceneEntityCfg("left_feet_scanner"), SceneEntityCfg("right_feet_scanner")]
+            if sensor_cfg is not None
+        ],
+        dim=-1,
+        )
+        feet_height = torch.clamp(feet_height - 0.04, min=0.0, max=1.0)
+        feet_height = torch.nan_to_num(feet_height, nan=1.0, posinf=1.0, neginf=0)
+        joint_torque = robot.data.applied_torque
+        joint_acc = robot.data.joint_acc
+        action_delay = self.action_buffer.time_lags.to(self.device).unsqueeze(1)
+        current_critic_obs = torch.cat(
+            [current_actor_obs, root_lin_vel * self.obs_scales.lin_vel, feet_contact.float(), feet_contact_force.flatten(1), feet_air_time.flatten(1), feet_height.flatten(1), joint_acc, joint_torque, action_delay.float()], dim=-1
+        )
+
+        return current_actor_obs, current_critic_obs
+
+    def reset(self, env_ids):
+        if len(env_ids) == 0:
+            return
+
+        self.extras["log"] = dict()
+        if self.cfg.scene.terrain_generator is not None:
+            if self.cfg.scene.terrain_generator.curriculum:
+                terrain_levels = self.update_terrain_levels(env_ids)
+                self.extras["log"].update(terrain_levels)
+        
+        if self.cfg.interrupt.use_interrupt:
+            tmp_interrupt_mask = self.interrupt_mask[env_ids]
+            tmp_interrupt_mode_mask = self.interrupt_mode_mask[env_ids]
+            self.update_interrupt_levels(env_ids[tmp_interrupt_mode_mask], env_ids[tmp_interrupt_mask])
+            self.extras["log"].update({"Curriculum/interrupt_levels":  torch.mean(self.interrupt_rad_curriculum[self.interrupt_indices])})
+
+        self.scene.reset(env_ids)
+        if "reset" in self.event_manager.available_modes:
+            self.event_manager.apply(
+                mode="reset",
+                env_ids=env_ids,
+                dt=self.step_dt,
+                global_env_step_count=self.sim_step_counter // self.cfg.sim.decimation,
+            )
+
+        reward_extras = self.reward_manager.reset(env_ids)
+        self.extras["log"].update(reward_extras)
+        self.extras["time_outs"] = self.time_out_buf
+
+        if self.cfg.domain_rand.action_delay.enable:
+            time_lags = torch.randint(
+                low=self.cfg.domain_rand.action_delay.params["min_delay"],
+                high=self.cfg.domain_rand.action_delay.params["max_delay"] + 1,
+                size=(self.num_envs,),
+                dtype=torch.int,
+                device=self.device,
+            )
+            self.action_buffer.set_time_lag(time_lags[env_ids], env_ids)
+
+        self.command_generator.reset(env_ids)
+        self.actor_obs_buffer.reset(env_ids)
+        self.critic_obs_buffer.reset(env_ids)
+        self.action_buffer.reset(env_ids)
+        self.episode_length_buf[env_ids] = 0
+
+        self.scene.write_data_to_sim()
+        self.sim.forward()
+
+    def step(self, actions: torch.Tensor):
+
+        delayed_actions = self.action_buffer.compute(actions)
+
+        cliped_actions = torch.clip(delayed_actions, -self.clip_actions, self.clip_actions).to(self.device)
+        if self.cfg.interrupt.use_interrupt:
+            self.random_switch_interrupt() 
+            interrupt_action_clip = self.curriculum_interrupt_clipping_mean_rad()
+            cliped_actions[:, self.interrupt_joint_cfg.joint_ids] = torch.where(
+                self.interrupt_mask.unsqueeze(-1).expand(-1, len(self.interrupt_joint_cfg.joint_ids)),
+                interrupt_action_clip,
+                cliped_actions[:, self.interrupt_joint_cfg.joint_ids]
+            )
+            cliped_actions = torch.clip(cliped_actions, -self.clip_actions, self.clip_actions).to(self.device)
+
+        processed_actions = cliped_actions * self.action_scale + self.robot.data.default_joint_pos
+
+        for _ in range(self.cfg.sim.decimation):
+            self.sim_step_counter += 1
+            self.robot.set_joint_position_target(processed_actions)
+            self.scene.write_data_to_sim()
+            self.sim.step(render=False)
+            self.scene.update(dt=self.physics_dt)
+
+        self.num_steps += 1
+        if self.cfg.interrupt.use_interrupt:
+            if self.num_steps % self.cfg.interrupt.interrupt_update_step == 0:
+                self.interrupt_actions = self.uniform_interrupt_resample() / self.cfg.robot.action_scale
+                self.num_steps %= self.cfg.interrupt.interrupt_update_step
+            if not self.headless:
+                robot_positions = self.robot.data.root_pos_w
+                marker_positions = robot_positions + torch.tensor([0.0, 0.0, 0.8], device=self.device)
+                interrupt_list = (~self.interrupt_mask).int().cpu().numpy().tolist()
+                self.interrupt_vis.visualize(marker_indices=interrupt_list, translations=marker_positions)
+
+        if not self.headless:
+            self.sim.render()
+
+        self.episode_length_buf += 1
+        self.command_generator.compute(self.step_dt)
+        if "interval" in self.event_manager.available_modes:
+            self.event_manager.apply(mode="interval", dt=self.step_dt)
+
+        self.reset_buf, self.time_out_buf = self.check_reset()
+        reward_buf = self.reward_manager.compute(self.step_dt)
+        env_ids = self.reset_buf.nonzero(as_tuple=False).flatten()
+        self.reset(env_ids)
+
+        actor_obs, critic_obs = self.compute_observations()
+        self.extras["observations"] = {"critic": critic_obs}
+
+        return actor_obs, reward_buf, self.reset_buf, self.extras
+    
+    def update_interrupt_levels(self, env_ids, interrupt_env_ids):
+        if len(env_ids) == 0:
+            return
+        distance = torch.norm(self.robot.data.root_pos_w[interrupt_env_ids, :2] - self.scene.env_origins[interrupt_env_ids, :2], dim=1)
+        curr_is_pass = distance > self.scene.terrain.cfg.terrain_generator.size[0] / 2
+        curr_is_down = (
+            distance < torch.norm(self.command_generator.command[interrupt_env_ids, :2], dim=1) * self.max_episode_length_s * 0.5
+        )
+        curr_is_down *= ~curr_is_pass
+
+        self.interrupt_rad_curriculum[interrupt_env_ids] = torch.where(
+            curr_is_down,
+            (self.interrupt_rad_curriculum[interrupt_env_ids] - 0.05).clip(min=0),
+            torch.where(
+                curr_is_pass,
+                (self.interrupt_rad_curriculum[interrupt_env_ids] + 0.05).clip(max=self.cfg.interrupt.max_curriculum),
+                self.interrupt_rad_curriculum[interrupt_env_ids]
+            )
+        )
+
+        self.interrupt_mask[env_ids] = (torch.rand(len(env_ids))<=0.5).to(self.device) # Reset with half with interrupt.
+        self.interrupt_actions[env_ids] = self.robot.data.joint_pos[env_ids][:, self.interrupt_joint_cfg.joint_ids] - self.robot.data.default_joint_pos[env_ids][:, self.interrupt_joint_cfg.joint_ids]
+
+    def uniform_interrupt_resample(self):
+        '''Sample Noise from Uniform interruption'''
+        targets = self.interrupt_scale * torch.rand((self.num_envs, len(self.cfg.interrupt.interrupt_joint_names)), device=self.device) + self.interrupt_lower_bound
+
+        # clip interrupt
+        left_env_mask1 = targets[:, 1] < 0.5
+        targets[left_env_mask1][:, 2] = torch.clamp(targets[left_env_mask1][:, 2], min=-1.57, max=0.85)
+        left_env_mask2 = targets[:, 1] < 0
+        targets[left_env_mask2][:, [2, 3]] = 0
+        right_env_mask1 =  targets[:, 5] > -0.5
+        targets[right_env_mask1][:, 6] = torch.clamp(targets[right_env_mask1][:, 2], min=-0.85, max=1.57)
+        right_env_mask2 =  targets[:, 5] > 0
+        targets[right_env_mask2][:, [6, 7]] = 0
+
+        return torch.clamp(
+            targets - self.robot.data.default_joint_pos[:, self.interrupt_joint_cfg.joint_ids], 
+            self.robot.data.default_joint_pos_limits[:, self.interrupt_joint_cfg.joint_ids, 0] - self.robot.data.default_joint_pos[:, self.interrupt_joint_cfg.joint_ids],
+            self.robot.data.default_joint_pos_limits[:, self.interrupt_joint_cfg.joint_ids, 1] - self.robot.data.default_joint_pos[:, self.interrupt_joint_cfg.joint_ids]
+        )
+
+    def curriculum_interrupt_clipping_mean_rad(self):
+        # clipping mean with curriculum
+        noise_mean = self.interrupt_rad_curriculum.unsqueeze(-1) * (self.robot.data.joint_pos[:, self.interrupt_joint_cfg.joint_ids] - self.robot.data.default_joint_pos[:, self.interrupt_joint_cfg.joint_ids])
+
+        # clipping action rate with curriculum by rad.
+        interrupt_actions = torch.clamp(
+            self.interrupt_actions,
+            (- self.cfg.interrupt.interrupt_init_range * self.interrupt_rad_curriculum.unsqueeze(-1) + noise_mean)/self.cfg.robot.action_scale,
+            (self.cfg.interrupt.interrupt_init_range * self.interrupt_rad_curriculum.unsqueeze(-1) + noise_mean)/self.cfg.robot.action_scale
+        )
+        return interrupt_actions
+    
+    def random_switch_interrupt(self):
+        switch_rand = torch.rand(self.num_envs, device=self.device)
+        switch = switch_rand < self.cfg.interrupt.switch_prob
+        self.interrupt_mask = torch.where(torch.logical_and(switch, self.interrupt_mode_mask), ~self.interrupt_mask, self.interrupt_mask)
