@@ -16,6 +16,9 @@
 
 ---
 
+<video controls src="assets/atom01-01.mp4" title="ROBOTO_ORIGIN演示视频" style="width: 100%; max-width: 800px;"></video>
+
+---
 
 ![机器人细节](assets/1280X1280.PNG)
 
