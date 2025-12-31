@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<dds>
+    <profiles xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles">
+        <transport_descriptors>
+            <transport_descriptor>
+                <transport_id>shm_transport</transport_id>
+                <type>SHM</type>
+                <segment_size>67108864</segment_size>
+                <maxMessageSize>65536</maxMessageSize>
+            </transport_descriptor>
+            <transport_descriptor>
+                <transport_id>udp_transport</transport_id>
+                <type>UDPv4</type>
+                <sendBufferSize>212992</sendBufferSize>
+                <receiveBufferSize>212992</receiveBufferSize>
+                <non_blocking_send>true</non_blocking_send>
+                <maxMessageSize>65500</maxMessageSize>
+            </transport_descriptor>
+        </transport_descriptors>
+
+        <participant profile_name="realtime_participant_profile" is_default_profile="true">
+            <rtps>
+                <propertiesPolicy>
+                    <properties>
+                        <property>
+                            <name>fastdds.log.verbosity</name>
+                            <value>ERROR</value>
+                        </property>
+                    </properties>
+                </propertiesPolicy>
+
+                <useBuiltinTransports>false</useBuiltinTransports>
+                <userTransports>
+                    <transport_id>shm_transport</transport_id>
+                    <transport_id>udp_transport</transport_id>
+                </userTransports>
+
+                <builtin>
+                    <discovery_config>
+                        <discoveryProtocol>SIMPLE</discoveryProtocol>
+                    </discovery_config>
+                </builtin>
+            </rtps>
+        </participant>
+        
+        <!-- default publisher profile -->
+        <publisher profile_name="default_publisher" is_default_profile="true">
+            <historyMemoryPolicy>DYNAMIC</historyMemoryPolicy>
+            <qos>
+                <publishMode>
+                    <kind>ASYNCHRONOUS</kind>
+                </publishMode>
+            </qos>
+        </publisher>
+
+        <!-- default subscriber profile -->
+        <subscriber profile_name="default_subscriber" is_default_profile="true">
+            <historyMemoryPolicy>DYNAMIC</historyMemoryPolicy>
+        </subscriber>
+    </profiles>
+</dds>

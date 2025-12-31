@@ -1,0 +1,12 @@
+[submodule "inference"]
+	path = inference
+	url = https://github.com/Luo1imasi/inference.git
+[submodule "motors"]
+	path = motors
+	url = https://github.com/Luo1imasi/motors.git
+[submodule "imu"]
+	path = imu
+	url = https://github.com/Luo1imasi/imu.git
+[submodule "create_ap"]
+	path = create_ap
+	url = https://github.com/Luo1imasi/create_ap.git
