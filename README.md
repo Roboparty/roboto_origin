@@ -18,7 +18,7 @@ In the future, we will gradually add the motion control algorithms implemented o
 
 ---
 
-<video controls src="assets/atom01-01.mp4" title="ROBOTO_ORIGIN Demo Video" style="width: 100%; max-width: 800px;"></video>
+![Robot Demo GIF 1](assets/atom01-01.gif)![Robot Demo GIF 2](assets/atom01-02.gif)
 
 ![Robot Details](assets/1280X1280.PNG)
 
