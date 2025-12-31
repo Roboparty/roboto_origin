@@ -18,7 +18,12 @@ In the future, we will gradually add the motion control algorithms implemented o
 
 ---
 
-![Robot Demo GIF 1](assets/atom01-01.gif)![Robot Demo GIF 2](assets/atom01-02.gif)
+<table>
+  <tr>
+    <td><img src="assets/atom01-01.gif" alt="Robot Demo GIF 1" width="100%"/></td>
+    <td><img src="assets/atom01-02.gif" alt="Robot Demo GIF 2" width="100%"/></td>
+  </tr>
+</table>
 
 ![Robot Details](assets/1280X1280.PNG)
 
@@ -39,7 +44,7 @@ In the future, we will gradually add the motion control algorithms implemented o
 
 ```bash
 # Clone repository
-git clone <repository-url>
+git clone https://github.com/Roboparty/roboto_origin.git
 
 # Update repository
 git pull
