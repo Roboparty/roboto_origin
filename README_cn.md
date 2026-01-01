@@ -56,4 +56,21 @@ git pull
 
 ---
 
+## 交流群
+
+**QQ群：** 1078670917
+
+<table>
+  <tr>
+    <td><img src="assets/qqqrcode.jpg" alt="QQ群二维码" width="200"/></td>
+    <td><img src="assets/wxqrcode.png" alt="微信群二维码" width="200"/></td>
+  </tr>
+  <tr>
+    <td align="center"><b>QQ群</b></td>
+    <td align="center"><b>微信群</b></td>
+  </tr>
+</table>
+
+---
+
 **本项目采用 GNU General Public License Version 3 (GPLv3) 许可证。详见 [LICENSE](LICENSE) 文件。**
