@@ -6,7 +6,7 @@
 
 ![Robot Overview](assets/1280X1280.JPEG)
 
-**[中文](README_cn.md)**
+**[中文说明点这里](README_cn.md)**
 
 ## About Us
 
@@ -17,6 +17,8 @@ As we advance the development of new robots, we realize that a high-performance 
 > This robot can be completely assembled through Taobao procurement and Jialichuang prototyping. It can be truly assembled independently through DIY. With our open-source training and deployment code, you can easily achieve walking and running.
 
 In the future, we will gradually add the motion control algorithms implemented on this robot to the open-source repository. However, as a fully open-source robot, its functionality can be defined by the vast number of developers and users, so a creative workshop will also be launched soon.
+
+**[BOM table](./assets/BOM_EN.md)**
 
 ---
 
