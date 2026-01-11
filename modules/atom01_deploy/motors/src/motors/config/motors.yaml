@@ -1,0 +1,20 @@
+motors_node:
+    ros__parameters:
+        motors_type: "DM"
+        motors_model: [1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0]
+        can0_startID: 1
+        can0_endID: 6
+        can0_masterID_offset: 16
+        can1_startID: 7
+        can1_endID: 13
+        can1_masterID_offset: 16
+        can2_startID: 14
+        can2_endID: 18
+        can2_masterID_offset: 16
+        can3_startID: 19
+        can3_endID: 23
+        can3_masterID_offset: 16
+        kp: [100.0, 100.0, 100.0, 150.0, 40.0, 40.0, 150.0, 40.0, 40.0, 40.0, 30.0, 20.0]
+        kd: [3.3, 3.3, 3.3, 5.0, 2.0, 2.0, 5.0, 2.0, 2.0, 2.0, 1.5, 1.0]
+        joint_default_angle: [0.0, 0.0, -0.1, 0.3, -0.2, 0.0, 0.0, 0.0, -0.1, 0.3, -0.2, 0.0, 0.0, 0.18, 0.06, 0.0, 0.78, 0.0, 0.18, -0.06, 0.0, 0.78, 0.0]
+
