@@ -18,7 +18,7 @@
 
 | 模组名称 | 功能描述 | 关键特性 | 文档入口 |
 | :--- | :--- | :--- | :--- |
-| **🤖 机器人本体**<br>(Robot Mechanical) | 机械结构与总装指南 | • 保姆级装配教程<br>• URDF 仿真文件 | [查看文档](./atom01_Mechanical/README.md) |
-| **⚡ 电源分配板**<br>(Power Distribution) | 核心供电枢纽 | • 48V 高压输入<br>• XT30/XT60 接口<br>• 集中式供电架构 | [查看文档](./atom01_pcb_/Roboto_Power/README.md) |
-| **📡 通讯模块**<br>(USB-to-CAN) | 信号转换网关 | • USB 转 4路 CAN<br>• Linux 专用<br>• 120Ω 终端匹配 | [查看文档](./atom01_pcb_/Roboto_Usb2Can/README.md) |
+| **🤖 机器人本体**<br>(Robot Mechanical) | 机械结构与总装指南 | • 保姆级装配教程<br>• URDF 仿真文件 | [查看文档](./atom01_mechnaic/README_cn.md) |
+| **⚡ 电源分配板**<br>(Power Distribution) | 核心供电枢纽 | • 48V 高压输入<br>• XT30/XT60 接口<br>• 集中式供电架构 | [查看文档](./atom01_pcb/Roboto_Power/README_cn.md) |
+| **📡 通讯模块**<br>(USB-to-CAN) | 信号转换网关 | • USB 转 4路 CAN<br>• Linux 专用<br>• 120Ω 终端匹配 | [查看文档](./atom01_pcb/Roboto_Usb2Can/README_cn.md) |
 ---

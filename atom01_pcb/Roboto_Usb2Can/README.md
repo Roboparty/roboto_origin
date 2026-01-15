@@ -1,5 +1,7 @@
 # Roboto_Usb2Can_V1.0 - USB to 4-Channel CAN Communication Module
 
+[English](./README.md) | **[🇨🇳 中文](./README_cn.md)**
+
 ![Manufacturer](https://img.shields.io/badge/Manufacturer-RoboParty-blue)
 ![Hardware](https://img.shields.io/badge/Hardware-V1.0-green)
 ![OS](https://img.shields.io/badge/OS-Linux_Only-orange)

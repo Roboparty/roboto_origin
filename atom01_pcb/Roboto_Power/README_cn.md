@@ -1,5 +1,7 @@
 # Roboto_Power_V1.0 - 机器人核心分电板
 
+**[中文](./README_cn.md)** | [English](./README.md)
+
 ![Manufacturer](https://img.shields.io/badge/Manufacturer-RoboParty-blue)
 ![Hardware](https://img.shields.io/badge/Hardware-V1.0-green)
 ![Voltage](https://img.shields.io/badge/Max_Voltage-48V-red)

@@ -1,5 +1,7 @@
 # Roboto_Power_V1.0 - Robot Core Power Distribution Board
 
+[English](./README.md) | **[🇨🇳 中文](./README_cn.md)**
+
 ![Manufacturer](https://img.shields.io/badge/Manufacturer-RoboParty-blue)
 ![Hardware](https://img.shields.io/badge/Hardware-V1.0-green)
 ![Voltage](https://img.shields.io/badge/Max_Voltage-48V-red)

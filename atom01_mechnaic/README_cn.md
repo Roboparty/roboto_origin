@@ -1,4 +1,6 @@
-# ROBOTO 
+# ROBOTO
+
+**[中文](./README_cn.md)** | [English](./README.md)
 
 ![Hardware](https://img.shields.io/badge/Hardware-v1.0-blue)
 ![Docs](https://img.shields.io/badge/Guide-Beginner_Friendly-green)
