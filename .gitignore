@@ -1,9 +1,2 @@
-*.egg-info
-*.pyc
-.vscode
-outputs
-logs
-run_bash.sh
-wandb
-*.png
-*.mp4
+# 同步脚本
+sync_subtrees.sh
