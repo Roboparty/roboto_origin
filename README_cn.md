@@ -18,6 +18,23 @@
 
 ---
 
+## 交流群
+
+**QQ群：** 1078670917
+
+<table>
+  <tr>
+    <td><img src="assets/qqqrcode.jpg" alt="QQ群二维码" width="200"/></td>
+    <td><img src="assets/wxqrcode.png" alt="微信群二维码" width="200"/></td>
+  </tr>
+  <tr>
+    <td align="center"><b>QQ群</b></td>
+    <td align="center"><b>微信群</b></td>
+  </tr>
+</table>
+
+---
+
 ## 关于本仓库
 
 本仓库为萝博头原型机的核心子仓库的快照，将会每日更新以方便一次拉取全部资源。
@@ -85,22 +102,6 @@ git pull
 
 **[Code of Conduct](CODE_OF_CONDUCT.md)**
 
----
-
-## 交流群
-
-**QQ群：** 1078670917
-
-<table>
-  <tr>
-    <td><img src="assets/qqqrcode.jpg" alt="QQ群二维码" width="200"/></td>
-    <td><img src="assets/wxqrcode.png" alt="微信群二维码" width="200"/></td>
-  </tr>
-  <tr>
-    <td align="center"><b>QQ群</b></td>
-    <td align="center"><b>微信群</b></td>
-  </tr>
-</table>
 
 ---
 
