@@ -1,0 +1,16 @@
+imu_node:
+    ros__parameters:
+        # 协议选择: "serial" 或 "can"
+        protocol: "serial"
+
+        # 串口配置（protocol="serial" 时使用）
+        serial_port: "/dev/ttyUSB0"
+        baud_rate: 921600
+
+        # CAN 配置（protocol="can" 时使用）
+        can_interface: "can4"
+
+        # 通用配置
+        frame_id: "base_link"
+        imu_topic: "/IMU_data"
+        publish_rate: 500
