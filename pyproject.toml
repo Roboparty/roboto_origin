@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rsl-rl-lib"
+version = "3.2.0"
+keywords = ["reinforcement-learning", "robotics"]
+maintainers = [
+  { name="Clemens Schwarke", email="cschwarke@ethz.ch" },
+  { name="Mayank Mittal", email="mittalma@ethz.ch" },
+]
+authors = [
+  { name="Clemens Schwarke", email="cschwarke@ethz.ch" },
+  { name="Mayank Mittal", email="mittalma@ethz.ch" },
+  { name="Nikita Rudin", email="rudinn@ethz.ch" },
+  { name="David Hoeller", email="holler.david78@gmail.com" },
+]
+description = "Fast and simple RL algorithms implemented in PyTorch"
+readme = { file = "README.md", content-type = "text/markdown" }
+license = "BSD-3-Clause"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "torch>=2.6.0",
+    "torchvision>=0.5.0",
+    "tensordict>=0.7.0",
+    "numpy>=1.16.4",
+    "GitPython",
+    "onnx",
+    "onnxscript>=0.5.4",
+]
+
+[project.urls]
+Homepage = "https://github.com/leggedrobotics/rsl_rl"
+Issues = "https://github.com/leggedrobotics/rsl_rl/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["rsl_rl*"]
+
+[tool.setuptools.package-data]
+"rsl_rl" = ["config/*", "licenses/*"]
+
+[tool.pyright]
+include = ["rsl_rl"]
+typeCheckingMode = "basic"
+pythonVersion = "3.9"
+pythonPlatform = "Linux"
+enableTypeIgnoreComments = true
+# This is required as the CI pre-commit does not download the module (i.e. numpy, torch, prettytable)
+reportMissingImports = "none"
+# This is required to ignore type checks of modules with stubs missing.
+reportMissingModuleSource = "none"  # -> most common: prettytable in mdp managers
+reportGeneralTypeIssues = "none"  # -> usage of literal MISSING in dataclasses
+reportOptionalMemberAccess = "none"
+reportPrivateUsage = "warning"
