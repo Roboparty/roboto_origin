@@ -1,0 +1,56 @@
+#environment
+.vscode
+
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Media
+*.jpg
+*.png
+*.jpeg
+*.avi
+*.mp4
+*.pcd
+map
+
+# Executables
+*.exe
+*.out
+*.app
+bin
+build
+lib
+/data/video/
+/data/pic/
+/old_data/pic/
+/corefile
+/install
+temp
+cmake-build-debug
+.idea
+log
