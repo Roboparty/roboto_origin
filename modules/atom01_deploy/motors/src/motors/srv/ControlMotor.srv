@@ -1,0 +1,11 @@
+# Request
+int32 motor_id    # 电机ID
+int32 can_id      # can设备ID
+float32 position  # 目标位置
+float32 velocity  # 目标速度
+float32 effort    # 力矩
+
+---
+# Response
+bool success      # 执行结果
+string message    # 错误信息
