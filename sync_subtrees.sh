@@ -42,6 +42,33 @@ log_info "开始同步 roboto_origin 所有 subtree 模块"
 echo "========================================"
 
 ###############################################################################
+# 辅助函数
+###############################################################################
+
+# 函数：获取远程仓库的默认分支
+get_default_branch() {
+    local repo_url="$1"
+
+    # 尝试使用 git ls-remote 获取 HEAD 指向的分支
+    local default_branch=$(git ls-remote --symref "$repo_url" HEAD 2>/dev/null | \
+        grep -o 'refs/heads/[^"]*' | \
+        sed 's|refs/heads/||' | \
+        head -n1)
+
+    # 如果检测失败，尝试常见的分支名
+    if [ -z "$default_branch" ]; then
+        for branch in main master master dev development; do
+            if git ls-remote --exit-code "$repo_url" "refs/heads/$branch" &>/dev/null; then
+                default_branch="$branch"
+                break
+            fi
+        done
+    fi
+
+    echo "$default_branch"
+}
+
+###############################################################################
 # 第一部分：同步四个主模块
 ###############################################################################
 
@@ -165,13 +192,21 @@ sync_one_submodule() {
     log_info "    路径: $full_submodule_path"
     log_info "    仓库: $submodule_url"
 
+    # 自动检测默认分支
+    local submodule_branch=$(get_default_branch "$submodule_url")
+    if [ -z "$submodule_branch" ]; then
+        log_error "    无法检测默认分支，跳过 $submodule_name"
+        return 1
+    fi
+    log_info "    检测到分支: $submodule_branch"
+
     # 检查子模块目录是否存在
     if [ ! -d "$full_submodule_path" ]; then
         log_warn "    子模块目录不存在，首次添加..."
-        git subtree add --prefix="$full_submodule_path" "$submodule_url" main --squash
+        git subtree add --prefix="$full_submodule_path" "$submodule_url" "$submodule_branch" --squash
     else
         log_info "    更新已存在的子模块..."
-        git subtree pull --prefix="$full_submodule_path" "$submodule_url" main --squash
+        git subtree pull --prefix="$full_submodule_path" "$submodule_url" "$submodule_branch" --squash
     fi
 
     log_success "    子模块 $submodule_name 同步完成"
