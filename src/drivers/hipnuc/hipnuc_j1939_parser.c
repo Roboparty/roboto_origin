@@ -1,4 +1,4 @@
-#include "hipnuc_lib_package/hipnuc_j1939_parser.h"
+#include "hipnuc_j1939_parser.h"
 
 #define J1939_PGN_LONLAT     0xFF10
 #define J1939_PGN_ALT        0xFF14

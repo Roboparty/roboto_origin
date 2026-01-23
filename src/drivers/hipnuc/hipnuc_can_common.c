@@ -1,4 +1,4 @@
-#include "hipnuc_lib_package/hipnuc_can_common.h"
+#include "hipnuc_can_common.h"
 #include <stdarg.h>
 #include <stdio.h>
 

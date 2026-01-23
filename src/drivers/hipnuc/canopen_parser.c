@@ -1,4 +1,4 @@
-#include "hipnuc_lib_package/canopen_parser.h"
+#include "canopen_parser.h"
 #include <stdint.h>
 
 #define TPDO1_BASE  0x180

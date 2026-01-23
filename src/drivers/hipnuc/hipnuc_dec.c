@@ -6,7 +6,7 @@
  *
  */
 
- #include "hipnuc_lib_package/hipnuc_dec.h"
+ #include "hipnuc_dec.h"
 
  /* The driver file for decoding HiPNUC protocol, DO NOT MODIFTY*/
  
