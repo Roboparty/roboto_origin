@@ -18,6 +18,12 @@ As we advance the development of new robots, we realize that a high-performance 
 
 In the future, we will gradually add the motion control algorithms implemented on this robot to the open-source repository. However, as a fully open-source robot, its functionality can be defined by the vast number of developers and users, so a creative workshop will also be launched soon.
 
+---
+
+## Documentation
+
+**[Humanoid Robot Know-How Documentation](https://roboparty.com/roboto_origin/doc)** - Complete R&D process documentation for the prototype robot
+
 ### Contributing
 
 **Important:** The `roboto_origin` repository serves as a snapshot aggregation only. All issue reporting and code contributions should be made to the individual sub-repositories.
@@ -82,3 +88,7 @@ This project has adopted the [Code of Conduct](CODE_OF_CONDUCT.md) to foster a w
 ---
 
 **This project is licensed under the GNU General Public License Version 3 (GPLv3). See [LICENSE](LICENSE) for details.**
+
+---
+
+![Star History Chart](https://api.star-history.com/svg?repos=Roboparty/roboto_origin&type=Date)

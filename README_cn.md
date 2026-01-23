@@ -18,6 +18,12 @@
 
 ---
 
+## 文档
+
+**[人形机器人Know-How文档](https://roboparty.com/roboto_origin/doc)** - 包含原型机全研发流程介绍
+
+---
+
 ## 交流群
 
 **QQ群：** 1078670917
@@ -107,3 +113,7 @@ git pull
 ---
 
 **本项目采用 GNU General Public License Version 3 (GPLv3) 许可证。详见 [LICENSE](LICENSE) 文件。**
+
+---
+
+![Star History Chart](https://api.star-history.com/svg?repos=Roboparty/roboto_origin&type=Date)
