@@ -1,0 +1,58 @@
+inference_node:
+    ros__parameters:
+        use_attn_enc: true
+        model_name: "policy_attn_enc.onnx"
+        act_alpha: 1.0
+        gyro_alpha: 1.0
+        angle_alpha: 1.0
+        obs_num: 78
+        perception_obs_num: 187
+        perception_obs_topic: "/robot_0/elevation_data"
+        frame_stack: 5
+        joint_num: 23
+        decimation: 4
+        intra_threads: 1
+        dt: 0.005
+        obs_scales_lin_vel: 1.0
+        obs_scales_ang_vel: 1.0
+        obs_scales_dof_pos: 1.0
+        obs_scales_dof_vel: 1.0
+        obs_scales_gravity_b: 1.0
+        clip_observations: 100.0
+        action_scale: 0.25
+        clip_actions: 100.0
+        usd2urdf: [0, 6, 12, 1, 7, 13, 18, 2, 8, 14, 19, 3, 9, 15, 20, 4, 10, 16, 21, 5, 11, 17, 22]
+        clip_cmd: 
+            [-0.6, 0.6,
+             -0.4, 0.4,
+             -0.8, 0.8]
+        joint_default_angle: 
+            [0.0, 0.0, -0.1, 0.3, -0.2, 0.0,
+             0.0, 0.0, -0.1, 0.3, -0.2, 0.0, 0.0,
+             0.18, 0.06, 0.0, 0.78, 0.0,
+             0.18, -0.06, 0.0, 0.78, 0.0]
+        joint_limits: 
+            [-1.0, 0.6,
+             -0.6, 1.0,
+             -1.57, 1.57,
+             -0.2, 2.5,
+             -0.6, 0.6,
+             -0.5, 0.5,
+             -0.6, 1.0,
+             -1.0, 0.6,
+             -1.57, 1.57,
+             -0.2, 2.5,
+             -0.6, 0.6,
+             -0.5, 0.5,
+             -3.14, 3.14,
+             -3.14, 1.57,
+             -0.25, 3.14,
+             -1.57, 1.57,
+             -0.6, 1.57,
+             -1.57, 1.57,
+             -3.14, 1.57,
+             -3.14, 0.25,
+             -1.57, 1.57,
+             -0.6, 1.57,
+             -1.57, 1.57]
+        gravity_z_upper: -0.5
