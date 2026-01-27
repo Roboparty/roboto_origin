@@ -1,4 +1,6 @@
 # 硬件文件已迁移到 modules/Atom01_hardware
 atom01_mechnaic/
 atom01_pcb/
-sync_subtrees.sh
+
+# 本地脚本目录（不提交到 git）
+.scripts/
