@@ -1,0 +1,3 @@
+[submodule "robolab/assets/roboparty/atom01"]
+	path = data/robots/roboparty/atom01
+	url = https://github.com/Roboparty/atom01_description.git
