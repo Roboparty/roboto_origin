@@ -56,7 +56,7 @@ orangepi   -   memlock  unlimited
 
 保存退出后重启香橙派使设置生效。
 
-## 硬件链接
+## 硬件连接
 
 电机驱动中can0对应左腿，can1对应右腿加腰，can2对应左手，can3对应右手，默认按照usb转can插入上位机顺序编号，先插入的是can0。建议将USB转CAN插在上位机的3.0接口上，如果使用USB扩展坞也请使用3.0接口的USB扩展坞并插在3.0接口上，IMU和手柄插在USB2.0接口即可。
 
@@ -108,7 +108,7 @@ source install/setup.bash
 ros2 launch hipnuc_imu imu_spec_msg.launch.py
 ```
 
-如果IMU串口权限正常，使用plotjunggler或者ros2 topic echo可以看到IMU数据。
+如果IMU串口权限正常，使用 PlotJuggler 或者 `ros2 topic echo` 可以看到IMU数据。
 
 ### MOTORS
 
@@ -137,13 +137,13 @@ ros2 service call /set_zeros motors/srv/SetZeros
 
 观察到电机绿灯一个个灭下说明正在标零。
 
-标零完成后重新启动motors并打开plotjunggler，订阅电机state话题后输入：
+标零完成后重新启动 motors 并打开 PlotJuggler，订阅电机 state 话题后输入：
 
 ```bash
 ros2 service call /read_motors motors/srv/ReadMotors
 ```
 
-此时在plotjunggler中可以看到各个电机此时位置，保证没有反向关节且都在零点附近后输入：
+此时在 PlotJuggler 中可以看到各个电机此时位置，保证没有反向关节且都在零点附近后输入：
 
 ```bash
 ros2 service call /reset_motors motors/srv/ResetMotors
