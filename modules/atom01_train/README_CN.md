@@ -48,6 +48,7 @@ pip install -e .
 cd ..
 cd rsl_rl
 pip install -e .
+cd ..
 ```
 
 - 通过运行以下命令验证扩展是否正确安装，打印可用环境列表：
