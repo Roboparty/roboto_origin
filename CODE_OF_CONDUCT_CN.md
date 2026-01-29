@@ -47,7 +47,7 @@
 
 社区影响指南受到了[Mozilla 的行为准则执行阶梯][mozilla coc]的启发。
 
-有关本行为准则的常见问题，请参阅[FAQ][https://www.contributor-covenant.org/faq]。翻译版本可在[https://www.contributor-covenant.org/translations][translations]获取。
+有关本行为准则的常见问题，请参阅 [FAQ][faq]。翻译版本可在 [translations][translations] 获取。
 
 [homepage]: https://www.contributor-covenant.org
 [version]: https://www.contributor-covenant.org/version/2/1/code_of_conduct.html
