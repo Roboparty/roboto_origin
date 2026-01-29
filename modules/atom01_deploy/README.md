@@ -108,7 +108,7 @@ source install/setup.bash
 ros2 launch hipnuc_imu imu_spec_msg.launch.py
 ```
 
-If IMU serial port permissions are normal, you can see IMU data using plotjunggler or ros2 topic echo.
+If IMU serial port permissions are normal, you can see IMU data using PlotJuggler or `ros2 topic echo`.
 
 ### MOTORS
 
@@ -137,13 +137,13 @@ ros2 service call /set_zeros motors/srv/SetZeros
 
 Observe that the motor green lights turn off one by one, indicating zeroing is in progress.
 
-After zeroing is complete, restart motors and open plotjunggler, subscribe to motor state topics and input:
+After zeroing is complete, restart motors and open PlotJuggler, subscribe to motor state topics and input:
 
 ```bash
 ros2 service call /read_motors motors/srv/ReadMotors
 ```
 
-At this time, you can see the current position of each motor in plotjunggler. Ensure there are no reversed joints and all are near zero point, then input:
+At this time, you can see the current position of each motor in PlotJuggler. Ensure there are no reversed joints and all are near zero point, then input:
 
 ```bash
 ros2 service call /reset_motors motors/srv/ResetMotors
