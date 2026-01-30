@@ -60,7 +60,22 @@ void SocketCAN::open(std::string interface) {
     receiver_thread_ = std::thread([this]() {
         pthread_setname_np(pthread_self(), "can_rx");
         struct sched_param sp{}; sp.sched_priority = 80;
-        pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp);
+        if (pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp) != 0) {
+            throw std::runtime_error("Failed to set realtime priority for CAN RX thread");
+        }
+
+        int cpu_id = 4; 
+        char last_char = interface_.back();
+        if (isdigit(last_char)) {
+            int port_num = last_char - '0';
+            cpu_id += (port_num % 2); 
+        }
+        cpu_set_t cpuset;
+        CPU_ZERO(&cpuset);
+        CPU_SET(cpu_id, &cpuset);
+        if (pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset) != 0) {
+            throw std::runtime_error("Failed to bind CAN RX thread to Core " + std::to_string(cpu_id));
+        }
 
         fd_set descriptors;
         int maxfd = sockfd_;
@@ -106,8 +121,23 @@ void SocketCAN::open(std::string interface) {
 
     sender_thread_ = std::thread([this]() {
         pthread_setname_np(pthread_self(), "can_tx");
-        struct sched_param sp{}; sp.sched_priority = 75;
-        pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp);
+        struct sched_param sp{}; sp.sched_priority = 80;
+        if (pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp) != 0) {
+            throw std::runtime_error("Failed to set realtime priority for CAN TX thread");
+        }
+
+        int cpu_id = 4; 
+        char last_char = interface_.back();
+        if (isdigit(last_char)) {
+            int port_num = last_char - '0';
+            cpu_id += (port_num % 2); 
+        }
+        cpu_set_t cpuset;
+        CPU_ZERO(&cpuset);
+        CPU_SET(cpu_id, &cpuset);
+        if (pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset) != 0) {
+            throw std::runtime_error("Failed to bind CAN TX thread to Core " + std::to_string(cpu_id));
+        }
 
         can_frame tx_frame;
         int count = 0;

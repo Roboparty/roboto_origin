@@ -16,7 +16,6 @@ DmMotorDriver::DmMotorDriver(uint16_t motor_id, const std::string& interface_typ
     master_id_ = motor_id_ + master_id_offset;
     limit_param_ = limit_param[motor_model_];
     can_interface_ = can_interface;
-    can_->set_send_sleep(200);
     CanCbkFunc can_callback = std::bind(&DmMotorDriver::can_rx_cbk, this, std::placeholders::_1);
     can_->add_can_callback(can_callback, master_id_);
 }
