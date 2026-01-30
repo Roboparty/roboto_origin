@@ -90,7 +90,7 @@ class RobotInterface {
     std::shared_ptr<IMUCfg> imu_cfg_;
     std::shared_ptr<MotorsCfg> motors_cfg_;
     std::shared_ptr<RobotCfg> robot_cfg_;
-    int offline_threshold_ = 10;
+    int offline_threshold_ = 25;
     std::shared_ptr<IMUDriver> imu_;
     std::shared_ptr<Decouple> ankle_decouple_;
     std::vector<std::shared_ptr<MotorDriver>> motors_;

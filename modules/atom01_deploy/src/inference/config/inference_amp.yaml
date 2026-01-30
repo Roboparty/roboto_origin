@@ -7,9 +7,9 @@ inference_node:
         obs_num: 78
         frame_stack: 1
         joint_num: 23
-        decimation: 4
+        decimation: 10
         intra_threads: 1
-        dt: 0.005
+        dt: 0.002
         obs_scales_lin_vel: 1.0
         obs_scales_ang_vel: 1.0
         obs_scales_dof_pos: 1.0

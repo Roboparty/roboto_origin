@@ -16,6 +16,11 @@ public:
         for(size_t i = 0; i<threads; ++i)
             workers.emplace_back(
                 [this] {
+                    pthread_setname_np(pthread_self(), "threadpool");
+                    struct sched_param sp{}; sp.sched_priority = 70;
+                    if (pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp) != 0) {
+                        throw std::runtime_error("Failed to set realtime priority for ThreadPool");
+                    }
                     for(;;) {
                         std::function<void()> task;
 

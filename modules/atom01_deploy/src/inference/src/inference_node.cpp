@@ -99,8 +99,10 @@ void InferenceNode::apply_action() {
 
 void InferenceNode::inference() {
     pthread_setname_np(pthread_self(), "inference");
-    struct sched_param sp{}; sp.sched_priority = 65;
-    pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp);
+    struct sched_param sp{}; sp.sched_priority = 70;
+    if (pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp) != 0) {
+        throw std::runtime_error("Failed to set realtime priority for inference thread");
+    }
     auto period = std::chrono::microseconds(static_cast<long long>(dt_ * 1000 * 1000 * decimation_));
 
     while(rclcpp::ok()){
@@ -239,6 +241,11 @@ void InferenceNode::inference() {
 }
 
 int main(int argc, char **argv) {
+    pthread_setname_np(pthread_self(), "main");
+    struct sched_param sp{}; sp.sched_priority = 70;
+    if (pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp) != 0) {
+        throw std::runtime_error("Failed to set realtime priority for main thread");
+    }
     rclcpp::init(argc, argv);
     try {
         auto node = std::make_shared<InferenceNode>();
