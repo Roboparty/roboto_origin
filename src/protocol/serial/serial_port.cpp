@@ -69,8 +69,10 @@ void SerialPort::init() {
     rx_thread_ = std::thread([this]() {
         pthread_setname_np(pthread_self(), "serial_rx");
         struct sched_param sp{}; sp.sched_priority = 80;
-        pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp);
-            
+        if (pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp) != 0) {
+            if (logger_) logger_->error("Failed to set realtime priority for IMU serial RX");
+            throw std::runtime_error("Failed to set realtime priority for IMU serial RX");
+        } 
         uint8_t buf[BUF_SIZE] = {0};
         
         while (running_) {

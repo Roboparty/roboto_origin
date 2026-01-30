@@ -60,8 +60,9 @@ void SocketCAN::open(std::string interface) {
     receiver_thread_ = std::thread([this]() {
         pthread_setname_np(pthread_self(), "can_rx");
         struct sched_param sp{}; sp.sched_priority = 80;
-        pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp);
-
+        if (pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp) != 0) {
+            throw std::runtime_error("Failed to set realtime priority for IMU CAN RX thread");
+        }
         fd_set descriptors;
         int maxfd = sockfd_;
         struct timeval timeout;
@@ -106,9 +107,10 @@ void SocketCAN::open(std::string interface) {
 
     sender_thread_ = std::thread([this]() {
         pthread_setname_np(pthread_self(), "can_tx");
-        struct sched_param sp{}; sp.sched_priority = 75;
-        pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp);
-
+        struct sched_param sp{}; sp.sched_priority = 80;
+        if (pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp) != 0) {
+            throw std::runtime_error("Failed to set realtime priority for IMU CAN TX thread");
+        }
         can_frame tx_frame;
         int count = 0;
         while (receiving_) {
