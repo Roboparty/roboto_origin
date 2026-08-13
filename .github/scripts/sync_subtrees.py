@@ -173,6 +173,8 @@ class SnapshotSync:
                     raise SyncError(f"Incomplete submodule declaration in {relative_file}: {section}")
                 child_path = (parent_dir / parser.get(section, "path")).as_posix()
                 branch = parser.get(section, "branch", fallback=None)
+                if child_path in actual:
+                    raise SyncError(f"Duplicate submodule path declaration: {child_path}")
                 actual[child_path] = (parser.get(section, "url"), branch)
 
         unknown = sorted(set(actual) - set(expected))

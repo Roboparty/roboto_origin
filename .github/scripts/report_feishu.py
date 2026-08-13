@@ -87,10 +87,12 @@ def build_blocks(report: dict) -> list[dict]:
     if status == "success" and not changed:
         status_text = "ℹ️ 今日无改动"
 
+    run_id = os.environ.get("GITHUB_RUN_ID", "").strip()
     run_url = (
         f"{os.environ.get('GITHUB_SERVER_URL', 'https://github.com')}/"
-        f"{os.environ.get('GITHUB_REPOSITORY', 'Roboparty/roboto_origin')}/actions/runs/"
-        f"{os.environ.get('GITHUB_RUN_ID', '')}"
+        f"{os.environ.get('GITHUB_REPOSITORY', 'Roboparty/roboto_origin')}/actions/runs/{run_id}"
+        if run_id
+        else ""
     )
     pr_url = os.environ.get("PR_URL", "").strip()
     base_sha = str(report.get("base_sha", "unknown"))[:12]
@@ -108,8 +110,11 @@ def build_blocks(report: dict) -> list[dict]:
         ),
         text_block(f"快照提交：{base_sha} → {final_sha}"),
         text_block(f"更新仓库：{', '.join(updated) if updated else '无'}"),
-        text_block(f"GitHub Actions：{run_url}"),
     ]
+    if run_url:
+        blocks.append(text_block(f"GitHub Actions：{run_url}"))
+    else:
+        blocks.append(text_block("执行方式：合并前本地手动快照验证"))
     if pr_url:
         blocks.append(text_block(f"dev → main PR：{pr_url}"))
     if report.get("error"):
