@@ -20,6 +20,7 @@ jobs:
       contents: write
     outputs:
       changed: ${{ steps.run.outputs.changed }}
+      actual_changed: ${{ steps.run.outputs.actual_changed }}
       final_sha: ${{ steps.run.outputs.final_sha }}
 
     steps:
@@ -82,14 +83,17 @@ jobs:
 
           if [[ -f "$report_dir/report.json" ]]; then
             changed="$(python3 -c 'import json,sys; print(str(json.load(open(sys.argv[1]))["changed"]).lower())' "$report_dir/report.json")"
+            actual_changed="$(python3 -c 'import json,sys; print(str(bool(json.load(open(sys.argv[1])).get("changed_repositories"))).lower())' "$report_dir/report.json")"
             final_sha="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["final_sha"])' "$report_dir/report.json")"
           else
             changed=false
+            actual_changed=false
             final_sha="$(git rev-parse HEAD)"
           fi
 
           echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"
           echo "changed=$changed" >> "$GITHUB_OUTPUT"
+          echo "actual_changed=$actual_changed" >> "$GITHUB_OUTPUT"
           echo "final_sha=$final_sha" >> "$GITHUB_OUTPUT"
           exit 0
 
@@ -216,4 +220,44 @@ jobs:
           PR_URL: ${{ needs.pull_request.outputs.url }}
         run: |
           python3 automation/.github/scripts/report_feishu.py \
+            --report "$RUNNER_TEMP/subtree-snapshot-report/report.json"
+
+  feishu_group_notification:
+    needs:
+      - sync
+      - pull_request
+      - feishu_report
+    if: >-
+      needs.sync.result == 'success' &&
+      needs.sync.outputs.actual_changed == 'true' &&
+      needs.pull_request.result == 'success' &&
+      needs.feishu_report.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+
+    steps:
+      - name: Check out trusted group notification client
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          path: automation
+          persist-credentials: false
+          sparse-checkout: .github/scripts/report_feishu_group.py
+
+      - name: Download synchronization report
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: subtree-snapshot-report-${{ github.run_id }}
+          path: ${{ runner.temp }}/subtree-snapshot-report
+
+      - name: Send formatted Feishu group card
+        env:
+          FEISHU_GROUP_WEBHOOK: ${{ secrets.FEISHU_GROUP_WEBHOOK }}
+          FEISHU_GROUP_SIGNING_SECRET: ${{ secrets.FEISHU_GROUP_SIGNING_SECRET }}
+          FEISHU_DOCUMENT_URL: ${{ secrets.FEISHU_DOCUMENT_URL }}
+        run: |
+          python3 automation/.github/scripts/report_feishu_group.py \
             --report "$RUNNER_TEMP/subtree-snapshot-report/report.json"

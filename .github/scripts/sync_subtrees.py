@@ -541,7 +541,9 @@ class SnapshotSync:
             upstream = record.upstream
             compare_url = None
             if before != "unknown" and upstream != "unknown" and before != upstream:
-                compare_url = f"{entry.repository}/compare/{before}...{upstream}"
+                compare_url = (
+                    f"{entry.repository.removesuffix('.git')}/compare/{before}...{upstream}"
+                )
             changes.append(
                 RepositoryChange(
                     name=entry.name,
