@@ -45,6 +45,42 @@ class EntryReport:
     result: str = "pending"
 
 
+@dataclass(frozen=True)
+class FileChange:
+    status: str
+    path: str
+    old_path: str | None
+    additions: int | None
+    deletions: int | None
+
+
+@dataclass
+class RepositoryChange:
+    name: str
+    path: str
+    repository: str
+    branch: str
+    before: str
+    upstream: str
+    compare_url: str | None
+    changed_files: int
+    deleted_files: int
+    additions: int
+    deletions: int
+    binary_files: int
+    files: list[FileChange]
+
+
+@dataclass(frozen=True)
+class DiffMetrics:
+    changed_files: int
+    deleted_files: int
+    additions: int
+    deletions: int
+    diff_stat: str
+    files: list[FileChange]
+
+
 class SyncError(RuntimeError):
     pass
 
@@ -84,6 +120,21 @@ class SnapshotSync:
                 f"{output[-4000:]}"
             )
         return output
+
+    def git_bytes(self, *args: str) -> bytes:
+        command = ["git", "-C", str(self.repository), *args]
+        completed = subprocess.run(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        if completed.returncode != 0:
+            detail = completed.stderr.decode("utf-8", errors="replace")[-4000:]
+            raise SyncError(
+                f"Command failed ({completed.returncode}): {' '.join(command)}\n{detail}"
+            )
+        return completed.stdout
 
     def _load_manifest(self) -> list[Entry]:
         entries: list[Entry] = []
@@ -400,7 +451,121 @@ class SnapshotSync:
 
         self.subtree_pull(entry)
 
-    def validate_final_state(self) -> tuple[int, int, int, str]:
+    @staticmethod
+    def decode_git_path(value: bytes) -> str:
+        return value.decode("utf-8", errors="surrogateescape")
+
+    def collect_file_changes(self) -> list[FileChange]:
+        revision = f"{self.base_sha}..HEAD"
+        status_tokens = self.git_bytes("diff", "--name-status", "-z", revision).split(b"\0")
+        status_records: list[tuple[str, str, str | None]] = []
+        index = 0
+        while index < len(status_tokens) and status_tokens[index]:
+            status = status_tokens[index].decode("ascii", errors="replace")
+            index += 1
+            if index >= len(status_tokens):
+                raise SyncError("Malformed git name-status output")
+            first_path = self.decode_git_path(status_tokens[index])
+            index += 1
+            if status.startswith(("R", "C")):
+                if index >= len(status_tokens):
+                    raise SyncError("Malformed git rename/copy output")
+                new_path = self.decode_git_path(status_tokens[index])
+                index += 1
+                status_records.append((status, new_path, first_path))
+            else:
+                status_records.append((status, first_path, None))
+
+        numstat_tokens = self.git_bytes("diff", "--numstat", "-z", revision).split(b"\0")
+        line_counts: dict[str, tuple[int | None, int | None]] = {}
+        index = 0
+        while index < len(numstat_tokens) and numstat_tokens[index]:
+            record = numstat_tokens[index]
+            index += 1
+            fields = record.split(b"\t", 2)
+            if len(fields) != 3:
+                raise SyncError("Malformed git numstat output")
+            added_raw, deleted_raw, path_raw = fields
+            if path_raw:
+                path = self.decode_git_path(path_raw)
+            else:
+                # With -z, renames/copies store old and new paths in the next two tokens.
+                if index + 1 >= len(numstat_tokens):
+                    raise SyncError("Malformed git rename/copy numstat output")
+                index += 1  # The old path is not used for attribution.
+                path = self.decode_git_path(numstat_tokens[index])
+                index += 1
+            additions = int(added_raw) if added_raw.isdigit() else None
+            deletions = int(deleted_raw) if deleted_raw.isdigit() else None
+            line_counts[path] = (additions, deletions)
+
+        changes: list[FileChange] = []
+        for status, path, old_path in status_records:
+            additions, deletions = line_counts.get(path, (None, None))
+            changes.append(
+                FileChange(
+                    status=status,
+                    path=path,
+                    old_path=old_path,
+                    additions=additions,
+                    deletions=deletions,
+                )
+            )
+        return changes
+
+    def entry_for_path(self, path: str) -> Entry | None:
+        matches = [
+            entry
+            for entry in self.entries
+            if path == entry.prefix or path.startswith(entry.prefix + "/")
+        ]
+        return max(matches, key=lambda entry: len(entry.prefix), default=None)
+
+    def repository_changes(self, files: list[FileChange]) -> list[RepositoryChange]:
+        grouped: dict[str, list[FileChange]] = {}
+        for file_change in files:
+            entry = self.entry_for_path(file_change.path)
+            if entry is None:
+                raise SyncError(
+                    f"Changed path does not belong to a fixed snapshot repository: {file_change.path}"
+                )
+            grouped.setdefault(entry.name, []).append(file_change)
+
+        changes: list[RepositoryChange] = []
+        for entry in self.entries:
+            entry_files = grouped.get(entry.name)
+            if not entry_files:
+                continue
+            record = self.records[entry.name]
+            before = record.before
+            upstream = record.upstream
+            compare_url = None
+            if before != "unknown" and upstream != "unknown" and before != upstream:
+                compare_url = f"{entry.repository}/compare/{before}...{upstream}"
+            changes.append(
+                RepositoryChange(
+                    name=entry.name,
+                    path=entry.prefix,
+                    repository=entry.repository,
+                    branch=entry.branch,
+                    before=before,
+                    upstream=upstream,
+                    compare_url=compare_url,
+                    changed_files=len(entry_files),
+                    deleted_files=sum(1 for item in entry_files if item.status.startswith("D")),
+                    additions=sum(item.additions or 0 for item in entry_files),
+                    deletions=sum(item.deletions or 0 for item in entry_files),
+                    binary_files=sum(
+                        1
+                        for item in entry_files
+                        if item.additions is None or item.deletions is None
+                    ),
+                    files=entry_files,
+                )
+            )
+        return changes
+
+    def validate_final_state(self) -> DiffMetrics:
         self.validate_gitmodules(require_all=True)
 
         unmerged = self.conflict_paths()
@@ -422,17 +587,19 @@ class SnapshotSync:
         if porcelain:
             raise SyncError("The synchronization left an uncommitted working tree:\n" + porcelain)
 
-        changed_paths = [
-            path
-            for path in self.git("diff", "--name-only", f"{self.base_sha}..HEAD", quiet=True).splitlines()
-            if path
+        file_changes = self.collect_file_changes()
+        changed_paths = [change.path for change in file_changes]
+        all_paths = changed_paths + [
+            change.old_path for change in file_changes if change.old_path is not None
         ]
-        outside = [path for path in changed_paths if not path.startswith("modules/")]
+        outside = [path for path in all_paths if not path.startswith("modules/")]
         if outside:
             raise SyncError("Snapshot changed paths outside modules/: " + ", ".join(outside))
 
-        statuses = self.git("diff", "--name-status", f"{self.base_sha}..HEAD", quiet=True).splitlines()
-        deleted = sum(1 for line in statuses if line.startswith("D\t"))
+        # Attribute every changed file to the deepest matching allowlisted repository.
+        self.repository_changes(file_changes)
+
+        deleted = sum(1 for change in file_changes if change.status.startswith("D"))
         max_changed = int(os.environ.get("MAX_CHANGED_FILES", "5000"))
         max_deleted = int(os.environ.get("MAX_DELETED_FILES", "500"))
         if len(changed_paths) > max_changed or deleted > max_deleted:
@@ -441,29 +608,38 @@ class SnapshotSync:
                 f"{deleted} deleted files (limits {max_changed}/{max_deleted})"
             )
 
-        additions = 0
-        deletions = 0
-        for line in self.git("diff", "--numstat", f"{self.base_sha}..HEAD", quiet=True).splitlines():
-            added, removed, _ = line.split("\t", 2)
-            if added.isdigit():
-                additions += int(added)
-            if removed.isdigit():
-                deletions += int(removed)
+        additions = sum(change.additions or 0 for change in file_changes)
+        deletions = sum(change.deletions or 0 for change in file_changes)
 
         diff_stat = self.git("diff", "--stat", f"{self.base_sha}..HEAD", quiet=True).strip()
-        return len(changed_paths), deleted, additions + deletions, diff_stat
+        return DiffMetrics(
+            changed_files=len(changed_paths),
+            deleted_files=deleted,
+            additions=additions,
+            deletions=deletions,
+            diff_stat=diff_stat,
+            files=file_changes,
+        )
 
     def write_report(
         self,
         status: str,
         error: str | None,
-        metrics: tuple[int, int, int, str] | None = None,
+        metrics: DiffMetrics | None = None,
     ) -> dict[str, object]:
         self.report_dir.mkdir(parents=True, exist_ok=True)
         final_sha = self.git("rev-parse", "HEAD", quiet=True).strip()
-        changed_files, deleted_files, changed_lines, diff_stat = metrics or (0, 0, 0, "")
+        changed_files = metrics.changed_files if metrics else 0
+        deleted_files = metrics.deleted_files if metrics else 0
+        additions = metrics.additions if metrics else 0
+        deletions = metrics.deletions if metrics else 0
+        changed_lines = additions + deletions
+        diff_stat = metrics.diff_stat if metrics else ""
         changed = status == "success" and final_sha != self.base_sha
-        updated = [record.name for record in self.records.values() if record.result == "updated"]
+        history_updated = [
+            record.name for record in self.records.values() if record.result == "updated"
+        ]
+        repository_changes = self.repository_changes(metrics.files) if metrics else []
         report: dict[str, object] = {
             "status": status,
             "changed": changed,
@@ -472,8 +648,12 @@ class SnapshotSync:
             "final_sha": final_sha,
             "changed_files": changed_files,
             "deleted_files": deleted_files,
+            "additions": additions,
+            "deletions": deletions,
             "changed_lines": changed_lines,
-            "updated": updated,
+            "updated": [change.name for change in repository_changes],
+            "history_updated": history_updated,
+            "changed_repositories": [asdict(change) for change in repository_changes],
             "error": error,
             "diff_stat": diff_stat,
             "entries": [asdict(self.records[entry.name]) for entry in self.entries],
@@ -491,17 +671,46 @@ class SnapshotSync:
             f"- 是否有改动：{'是' if changed else '否'}",
             f"- 基准提交：`{self.base_sha[:12]}`",
             f"- 最终提交：`{final_sha[:12]}`",
-            f"- 更新仓库：{', '.join(updated) if updated else '无'}",
-            f"- 文件统计：{changed_files} 个文件，{deleted_files} 个删除，{changed_lines} 行增删",
+            f"- 实际改动仓库：{len(repository_changes)} 个",
+            f"- 文件统计：{changed_files} 个文件，{deleted_files} 个删除，+{additions} / -{deletions}",
         ]
         if error:
             lines.extend(["", "## 错误", "", error[:2000]])
-        lines.extend(["", "## 白名单检查", "", "| 仓库 | 路径 | 上游 | 结果 |", "| --- | --- | --- | --- |"])
-        for entry in self.entries:
-            record = self.records[entry.name]
-            lines.append(
-                f"| {record.name} | `{record.path}` | `{record.upstream[:12]}` | {record.result} |"
+        lines.extend(["", f"## 实际改动仓库（{len(repository_changes)}）", ""])
+        if status != "success":
+            lines.append("同步失败，未完成实际文件差异归属；请先查看上方错误信息。")
+        elif not repository_changes:
+            lines.append("本次没有仓库产生实际文件差异；未变化仓库已省略。")
+        for change in repository_changes:
+            lines.extend(
+                [
+                    f"### 🔔 [{change.name}]({change.repository})",
+                    "",
+                    f"- 快照路径：`{change.path}`",
+                    f"- 跟踪分支：`{change.branch}`",
+                    f"- 上游提交：`{change.before[:12]}` → `{change.upstream[:12]}`",
+                    f"- 变更统计：{change.changed_files} 个文件，{change.deleted_files} 个删除，+{change.additions} / -{change.deletions}",
+                ]
             )
+            if change.compare_url:
+                lines.append(f"- 上游对比：[查看提交差异]({change.compare_url})")
+            lines.extend(["", "| 状态 | 文件 | 行数 |", "| --- | --- | --- |"])
+            for file_change in change.files:
+                relative_path = file_change.path[len(change.path) :].lstrip("/")
+                if file_change.old_path:
+                    old_relative = file_change.old_path[len(change.path) :].lstrip("/")
+                    display_path = f"{old_relative} → {relative_path}"
+                else:
+                    display_path = relative_path
+                display_path = display_path.replace("|", "\\|").replace("`", "\\`")
+                if file_change.additions is None or file_change.deletions is None:
+                    line_stat = "二进制"
+                else:
+                    line_stat = f"+{file_change.additions} / -{file_change.deletions}"
+                lines.append(f"| {file_change.status} | `{display_path}` | {line_stat} |")
+        omitted = len(self.entries) - len(repository_changes)
+        if status == "success" and omitted:
+            lines.extend(["", f"> 其余 {omitted} 个白名单仓库没有实际文件差异，已省略。"])
         if diff_stat:
             lines.extend(["", "## Git 统计", "", "```text", diff_stat, "```"])
         (self.report_dir / "report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -509,7 +718,7 @@ class SnapshotSync:
 
     def execute(self) -> int:
         error: str | None = None
-        metrics: tuple[int, int, int, str] | None = None
+        metrics: DiffMetrics | None = None
         status = "failed"
         try:
             if self.git("status", "--porcelain", quiet=True).strip():

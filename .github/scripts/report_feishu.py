@@ -63,8 +63,11 @@ def load_report(path: Path) -> dict:
         "status": "failed",
         "changed": False,
         "updated": [],
+        "changed_repositories": [],
         "changed_files": 0,
         "deleted_files": 0,
+        "additions": 0,
+        "deletions": 0,
         "changed_lines": 0,
         "base_sha": "unknown",
         "final_sha": "unknown",
@@ -82,7 +85,7 @@ def build_blocks(report: dict) -> list[dict]:
 
     status = report.get("status", "failed")
     changed = bool(report.get("changed"))
-    updated = list(report.get("updated") or [])
+    changed_repositories = list(report.get("changed_repositories") or [])
     status_text = "✅ 同步成功" if status == "success" else "❌ 同步失败"
     if status == "success" and not changed:
         status_text = "ℹ️ 今日无改动"
@@ -106,11 +109,45 @@ def build_blocks(report: dict) -> list[dict]:
             "统计："
             f"{report.get('changed_files', 0)} 个文件，"
             f"{report.get('deleted_files', 0)} 个删除，"
-            f"{report.get('changed_lines', 0)} 行增删"
+            f"+{report.get('additions', 0)} / -{report.get('deletions', 0)}"
         ),
         text_block(f"快照提交：{base_sha} → {final_sha}"),
-        text_block(f"更新仓库：{', '.join(updated) if updated else '无'}"),
+        text_block(
+            f"实际改动仓库：{len(changed_repositories)} 个（未变化仓库已省略）"
+            if status == "success"
+            else "实际改动仓库：同步失败，未完成统计"
+        ),
     ]
+    for repository in changed_repositories:
+        name = str(repository.get("name", "unknown"))
+        before = str(repository.get("before", "unknown"))[:12]
+        upstream = str(repository.get("upstream", "unknown"))[:12]
+        blocks.append(heading_block(f"🔔 发生改动：{name}"))
+        details = [
+            f"仓库：{repository.get('repository', '')}",
+            f"快照路径：{repository.get('path', '')}",
+            f"上游提交：{before} → {upstream}",
+            (
+                "统计："
+                f"{repository.get('changed_files', 0)} 个文件，"
+                f"{repository.get('deleted_files', 0)} 个删除，"
+                f"+{repository.get('additions', 0)} / -{repository.get('deletions', 0)}"
+            ),
+        ]
+        compare_url = str(repository.get("compare_url") or "")
+        if compare_url:
+            details.append(f"上游对比：{compare_url}")
+        details.append("文件：")
+        for file_change in repository.get("files") or []:
+            path = str(file_change.get("path", ""))
+            prefix = str(repository.get("path", "")).rstrip("/") + "/"
+            if path.startswith(prefix):
+                path = path[len(prefix) :]
+            added = file_change.get("additions")
+            deleted = file_change.get("deletions")
+            line_stat = "二进制" if added is None or deleted is None else f"+{added} / -{deleted}"
+            details.append(f"- [{file_change.get('status', '?')}] {path}（{line_stat}）")
+        blocks.extend(text_blocks(details))
     if run_url:
         blocks.append(text_block(f"GitHub Actions：{run_url}"))
     else:
@@ -120,6 +157,22 @@ def build_blocks(report: dict) -> list[dict]:
     if report.get("error"):
         blocks.append(text_block(f"错误：{str(report['error'])[:1500]}"))
     return blocks
+
+
+def text_blocks(lines: list[str], max_chars: int = 4500) -> list[dict]:
+    chunks: list[str] = []
+    current = ""
+    for line in lines:
+        candidate = line if not current else f"{current}\n{line}"
+        if len(candidate) <= max_chars:
+            current = candidate
+            continue
+        if current:
+            chunks.append(current)
+        current = line[:max_chars]
+    if current:
+        chunks.append(current)
+    return [text_block(chunk) for chunk in chunks]
 
 
 def main() -> int:
@@ -145,13 +198,15 @@ def main() -> int:
 
     report = load_report(args.report)
     blocks = build_blocks(report)
-    result = request_json(
-        f"{FEISHU_API}/docx/v1/documents/{document_id}/blocks/{document_id}/children",
-        method="POST",
-        payload={"children": blocks, "index": -1},
-        token=token,
-    )
-    created = len(result.get("data", {}).get("children", []))
+    created = 0
+    for index in range(0, len(blocks), 50):
+        result = request_json(
+            f"{FEISHU_API}/docx/v1/documents/{document_id}/blocks/{document_id}/children",
+            method="POST",
+            payload={"children": blocks[index : index + 50], "index": -1},
+            token=token,
+        )
+        created += len(result.get("data", {}).get("children", []))
     print(f"Appended {created} report blocks to the Feishu document")
     return 0
 
