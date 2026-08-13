@@ -56,6 +56,10 @@ def heading_block(content: str) -> dict:
     return {"block_type": 4, "heading2": rich_text(content)}
 
 
+def heading3_block(content: str) -> dict:
+    return {"block_type": 5, "heading3": rich_text(content)}
+
+
 def load_report(path: Path) -> dict:
     if path.exists():
         return json.loads(path.read_text(encoding="utf-8"))
@@ -122,7 +126,7 @@ def build_blocks(report: dict) -> list[dict]:
         name = str(repository.get("name", "unknown"))
         before = str(repository.get("before", "unknown"))[:12]
         upstream = str(repository.get("upstream", "unknown"))[:12]
-        blocks.append(heading_block(f"🔔 发生改动：{name}"))
+        blocks.append(heading3_block(f"🔔 发生改动：{name}"))
         details = [
             f"仓库：{repository.get('repository', '')}",
             f"快照路径：{repository.get('path', '')}",
