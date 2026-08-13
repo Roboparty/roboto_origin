@@ -1,0 +1,219 @@
+name: Sync subtree snapshots
+
+on:
+  schedule:
+    # 09:10 Asia/Shanghai. Scheduled workflows run from the default branch.
+    - cron: "10 1 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: sync-subtree-snapshots
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    permissions:
+      contents: write
+    outputs:
+      changed: ${{ steps.run.outputs.changed }}
+      final_sha: ${{ steps.run.outputs.final_sha }}
+
+    steps:
+      - name: Check out trusted automation source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          path: automation
+          persist-credentials: false
+
+      - name: Check out dev snapshot with full history
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: dev
+          path: snapshot
+          fetch-depth: 0
+
+      - name: Verify source and dev head
+        id: guard
+        shell: bash
+        working-directory: snapshot
+        run: |
+          set -euo pipefail
+          case "$GITHUB_REF_NAME" in
+            main|dev) ;;
+            *) echo "This workflow may only run from main or dev." >&2; exit 1 ;;
+          esac
+
+          local_sha="$(git rev-parse HEAD)"
+          git fetch --quiet origin refs/heads/dev
+          remote_sha="$(git rev-parse FETCH_HEAD)"
+          if [[ "$local_sha" != "$remote_sha" ]]; then
+            echo "The checked-out dev head changed before synchronization." >&2
+            exit 1
+          fi
+          echo "remote_sha=$remote_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Configure snapshot commit identity
+        shell: bash
+        working-directory: snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Synchronize fixed subtree allowlist
+        id: run
+        shell: bash
+        working-directory: snapshot
+        env:
+          MAX_CHANGED_FILES: "5000"
+          MAX_DELETED_FILES: "500"
+        run: |
+          set +e
+          report_dir="$RUNNER_TEMP/subtree-snapshot-report"
+          python3 ../automation/.github/scripts/sync_subtrees.py \
+            --repository . \
+            --manifest ../automation/.github/subtree-snapshots.tsv \
+            --report-dir "$report_dir"
+          exit_code=$?
+
+          if [[ -f "$report_dir/report.json" ]]; then
+            changed="$(python3 -c 'import json,sys; print(str(json.load(open(sys.argv[1]))["changed"]).lower())' "$report_dir/report.json")"
+            final_sha="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["final_sha"])' "$report_dir/report.json")"
+          else
+            changed=false
+            final_sha="$(git rev-parse HEAD)"
+          fi
+
+          echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
+          echo "final_sha=$final_sha" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Push snapshot commits to dev only
+        if: steps.run.outputs.exit_code == '0' && steps.run.outputs.changed == 'true'
+        shell: bash
+        working-directory: snapshot
+        run: |
+          set -euo pipefail
+          git fetch --quiet origin refs/heads/dev
+          current_remote_sha="$(git rev-parse FETCH_HEAD)"
+          if [[ "$current_remote_sha" != "${{ steps.guard.outputs.remote_sha }}" ]]; then
+            echo "Remote dev changed during synchronization; refusing to overwrite it." >&2
+            exit 1
+          fi
+          git push origin HEAD:refs/heads/dev
+
+      - name: Upload synchronization report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: subtree-snapshot-report-${{ github.run_id }}
+          path: ${{ runner.temp }}/subtree-snapshot-report
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Mark failed synchronization
+        if: steps.run.outputs.exit_code != '0'
+        shell: bash
+        run: exit 1
+
+  pull_request:
+    needs: sync
+    if: needs.sync.result == 'success' && needs.sync.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    outputs:
+      url: ${{ steps.pr.outputs.url }}
+
+    steps:
+      - name: Download synchronization report
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: subtree-snapshot-report-${{ github.run_id }}
+          path: ${{ runner.temp }}/subtree-snapshot-report
+
+      - name: Create or refresh dev to main pull request
+        id: pr
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          report="$RUNNER_TEMP/subtree-snapshot-report/report.md"
+          body="$RUNNER_TEMP/pr-body.md"
+          cp "$report" "$body"
+          cat >> "$body" <<'EOF'
+
+          ---
+          此 PR 由固定白名单快照工作流维护。它不会自动批准或合并；main 仍需人工审查。
+          EOF
+
+          number="$(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
+            --state open \
+            --head dev \
+            --base main \
+            --json number \
+            --jq '.[0].number // empty')"
+
+          if [[ -n "$number" ]]; then
+            gh pr edit "$number" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "chore: refresh subtree snapshots" \
+              --body-file "$body"
+            url="$(gh pr view "$number" --repo "$GITHUB_REPOSITORY" --json url --jq .url)"
+          else
+            url="$(gh pr create \
+              --repo "$GITHUB_REPOSITORY" \
+              --base main \
+              --head dev \
+              --title "chore: refresh subtree snapshots" \
+              --body-file "$body")"
+          fi
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+  feishu_report:
+    needs:
+      - sync
+      - pull_request
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+
+    steps:
+      - name: Check out trusted report client
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          path: automation
+          persist-credentials: false
+          sparse-checkout: .github/scripts/report_feishu.py
+
+      - name: Download synchronization report
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: subtree-snapshot-report-${{ github.run_id }}
+          path: ${{ runner.temp }}/subtree-snapshot-report
+
+      - name: Append result to Feishu document
+        env:
+          FEISHU_APP_ID: ${{ secrets.FEISHU_APP_ID }}
+          FEISHU_APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
+          FEISHU_DOCUMENT_ID: ${{ secrets.FEISHU_DOCUMENT_ID }}
+          WORKFLOW_RESULT: ${{ needs.sync.result }}
+          PR_URL: ${{ needs.pull_request.outputs.url }}
+        run: |
+          python3 automation/.github/scripts/report_feishu.py \
+            --report "$RUNNER_TEMP/subtree-snapshot-report/report.json"

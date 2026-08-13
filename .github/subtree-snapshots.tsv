@@ -1,0 +1,24 @@
+# level	name	prefix	repository	branch	mode	legacy_prefix
+0	rpo_hardware	modules/rpo_hardware	https://github.com/Roboparty/rpo_hardware.git	main	full	modules/Atom01_hardware
+0	roboparty_deploy	modules/roboparty_deploy	https://github.com/Roboparty/roboparty_deploy.git	main	full	modules/atom01_deploy
+0	roboparty_train	modules/roboparty_train	https://github.com/Roboparty/roboparty_train.git	main	full	modules/atom01_train
+0	rpo_description	modules/rpo_description	https://github.com/Roboparty/rpo_description.git	main	full	modules/atom01_description
+0	roboparty_firmware	modules/roboparty_firmware	https://github.com/Roboparty/roboparty_firmware.git	main	full	modules/atom01_firmware
+0	rpo_appearance	modules/rpo_appearance	https://github.com/Roboparty/rpo_appearance.git	main	full	modules/atom01_appearance
+0	roboparty_navigation	modules/roboparty_navigation	https://github.com/Roboparty/roboparty_navigation.git	master	full	-
+0	roboparty_xr_teleop	modules/roboparty_xr_teleop	https://github.com/Roboparty/roboparty_xr_teleop.git	main	full	modules/Atom_xr_teleop
+1	roboparty_inference	modules/roboparty_deploy/src/inference	https://github.com/Roboparty/roboparty_inference.git	master	squash	modules/atom01_deploy/src/inference
+1	roboparty_motors	modules/roboparty_deploy/src/motors	https://github.com/Roboparty/roboparty_motors.git	master	squash	modules/atom01_deploy/src/motors
+1	roboparty_imu	modules/roboparty_deploy/src/imu	https://github.com/Roboparty/roboparty_imu.git	master	squash	modules/atom01_deploy/src/imu
+1	create_ap	modules/roboparty_deploy/tools/create_ap	https://github.com/Roboparty/create_ap.git	master	squash	modules/atom01_deploy/tools/create_ap
+1	roboparty_camera	modules/roboparty_deploy/src/camera	https://github.com/Roboparty/roboparty_camera.git	main	squash	-
+1	roboto_usb2can	modules/roboparty_firmware/roboto_usb2can	https://github.com/wentywenty/roboto_usb2can.git	master	squash	modules/atom01_firmware/roboto_usb2can
+1	orangepi-build	modules/roboparty_firmware/orangepi-build	https://github.com/wentywenty/orangepi-build.git	next	squash	modules/atom01_firmware/orangepi-build
+1	x5-rdk-gen	modules/roboparty_firmware/x5-rdk-gen	https://github.com/wentywenty/x5-rdk-gen.git	main	squash	modules/atom01_firmware/x5-rdk-gen
+1	robots_localization_ros2	modules/roboparty_navigation/robots_localization_ros2	https://github.com/Luo1imasi/robots_localization_ros2.git	master	squash	-
+1	nlink_parser_ros2	modules/roboparty_navigation/nlink_parser_ros2	https://github.com/Luo1imasi/nlink_parser_ros2.git	master	squash	-
+1	robolab	modules/roboparty_train/robolab	https://github.com/Roboparty/robolab.git	master	squash	modules/atom01_train/robolab
+1	rsl_rl	modules/roboparty_train/rsl_rl	https://github.com/Roboparty/rsl_rl.git	main	squash	modules/atom01_train/rsl_rl
+2	realsense-ros	modules/roboparty_deploy/src/camera/thirdparty/realsense-ros	https://github.com/realsenseai/realsense-ros.git	ros2-master	squash	-
+2	cnpy	modules/roboparty_deploy/src/inference/thirdparty/cnpy	https://github.com/rogersce/cnpy.git	master	squash	-
+2	robolab-rpo-description	modules/roboparty_train/robolab/data/robots/roboparty/rpo	https://github.com/Roboparty/rpo_description.git	main	squash	modules/atom01_train/robolab/data/robots/roboparty/rpo
