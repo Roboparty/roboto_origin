@@ -22,7 +22,7 @@ In the future, we will gradually add the motion control algorithms implemented o
 
 ## Documentation
 
-**[Humanoid Robot Know-How Documentation](https://roboparty.com/roboto_origin/doc)** - Complete R&D process documentation for the prototype robot
+**[Humanoid Robot Know-How Documentation](https://roboparty.com/documents/party-os?doc=motion-control-know-how&lang=en)** - Complete R&D process documentation for the prototype robot
 
 ---
 
