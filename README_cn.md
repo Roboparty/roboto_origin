@@ -20,7 +20,7 @@
 
 ## 文档
 
-**[人形机器人Know-How文档](https://roboparty.com/roboto_origin/doc)** - 包含原型机全研发流程介绍
+**[人形机器人Know-How文档](https://roboparty.com/documents/party-os?doc=motion-control-know-how&lang=zh)** - 包含原型机全研发流程介绍
 
 ---
 
